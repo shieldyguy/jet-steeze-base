@@ -9,6 +9,10 @@ pl = {
  y = 64,
  dx = 0,
  dy = 0,
+ z = 0,    -- height above water
+ dz = 0,   -- vertical velocity
+ g = 0.5,  -- gravity
+ jump_power = 2.5, -- initial jump velocity
  spd = 0.08,  -- same speed as basics.p8
  dir = 0
 }
@@ -117,11 +121,12 @@ function _draw()
 end
 
 function draw_shadow()
-    spr(sprite_index+32, pl.x-5, pl.y-3, 2, 2, flip_x)
+    spr(sprite_index+32, pl.x-5-(pl.z/4), pl.y-3, 2, 2, flip_x)
 end 
 
 function draw_player() 
-    spr(sprite_index, pl.x-4, pl.y-4, 2, 2, flip_x)
+    -- draw player at height z
+    spr(sprite_index, pl.x-4, pl.y-4-pl.z, 2, 2, flip_x)
 end
 
 function get_direction()
@@ -207,6 +212,26 @@ function move_player(p)
         p.dy *= 0.8  -- deceleration when no input
     end
     
+    -- jump when O is pressed and we're on the water
+    if (btn(🅾️) and p.z <= 0) then
+        p.dz = p.jump_power
+    end
+    
+    -- apply gravity and update z position
+    p.dz -= p.g
+    p.z += p.dz
+    
+    -- bounce off water with 30% of velocity maintained
+    if p.z < 0 then
+        p.z = 0
+        if p.dz < -1 then  -- only splash if we hit with some speed
+            for i=1,25 do
+                make_splash(p.x + ((i/25)*8), p.y+8, p.dx*(rnd()-0.5), p.dy*(rnd()-0.5), 0.4)
+            end
+        end
+        p.dz = 0
+    end
+    
     -- update position
     p.x += p.dx
     p.y += p.dy
@@ -231,6 +256,7 @@ __gfx__
 00000777777770000007777997700000000076666667000000007555555700000000079955977000000000000000000000000000000000000000000000000000
 00000000000000000000077777000000000077666677000000000755557000000000000777770000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000007777770000000000077770000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
