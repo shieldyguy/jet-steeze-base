@@ -200,7 +200,7 @@ function update_particle(p)
 function move_player(p)
     -- acceleration based on input
 
-    local max_delta = 2
+    local max_delta = 2.5
     if (btn(⬅️)) then
         p.dx -= p.spd
     elseif (btn(➡️)) then
