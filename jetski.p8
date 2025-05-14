@@ -54,38 +54,40 @@ function _update()
     local speed = (max(abs(pl.dx), abs(pl.dy))*0.3)
     local splash_threshold = 0.05
     
-    if(pl.dir == dir_map.n or pl.dir == dir_map.s) then
-        if(speed > splash_threshold) then
-            make_splash(pl.x,pl.y+2,-speed,pl.dy,speed)
-            make_splash(pl.x,pl.y+4,-speed,pl.dy,speed)
-            make_splash(pl.x,pl.y+6,-speed,pl.dy,speed)
-            make_splash(pl.x+8,pl.y+2,speed,pl.dy,speed)
-            make_splash(pl.x+8,pl.y+4,speed,pl.dy,speed)
-            make_splash(pl.x+8,pl.y+6,speed,pl.dy,speed)
-        end
-    elseif(pl.dir == dir_map.e or pl.dir == dir_map.w) then
-        if(speed > splash_threshold) then
-            make_splash(pl.x+2,pl.y+7,pl.dx*0.5,0.3,speed)
-            make_splash(pl.x+4,pl.y+7,pl.dx*0.5,0.3,speed)
-            make_splash(pl.x+6,pl.y+7,pl.dx*0.5,0.3,speed)
-        end
-    elseif(pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
-        if(speed > splash_threshold) then
-            make_splash(pl.x+2,pl.y+6,-speed,0.3,speed)
-            make_splash(pl.x+4,pl.y+4,-speed,0.3,speed)
-            make_splash(pl.x+6,pl.y+2,-speed,0.3,speed)
-            make_splash(pl.x+4,pl.y+8,speed,0.3,speed)
-            make_splash(pl.x+6,pl.y+6,speed,0.3,speed)
-            make_splash(pl.x+8,pl.y+4,speed,0.3,speed)
-        end
-    elseif(pl.dir == dir_map.nw or pl.dir == dir_map.se) then
-        if(speed > splash_threshold) then
-            make_splash(pl.x+1,pl.y+4,-speed,0.3,speed)
-            make_splash(pl.x+3,pl.y+6,-speed,0.3,speed)
-            make_splash(pl.x+5,pl.y+8,-speed,0.3,speed)
-            make_splash(pl.x+4,pl.y+2,speed,0.3,speed)
-            make_splash(pl.x+6,pl.y+4,speed,0.3,speed)
-            make_splash(pl.x+8,pl.y+6,speed,0.3,speed)
+    if(pl.z == 0) then
+        if(pl.dir == dir_map.n or pl.dir == dir_map.s) then
+            if(speed > splash_threshold) then
+                make_splash(pl.x,pl.y+2,-speed,pl.dy,speed)
+                make_splash(pl.x,pl.y+4,-speed,pl.dy,speed)
+                make_splash(pl.x,pl.y+6,-speed,pl.dy,speed)
+                make_splash(pl.x+8,pl.y+2,speed,pl.dy,speed)
+                make_splash(pl.x+8,pl.y+4,speed,pl.dy,speed)
+                make_splash(pl.x+8,pl.y+6,speed,pl.dy,speed)
+            end
+        elseif(pl.dir == dir_map.e or pl.dir == dir_map.w) then
+            if(speed > splash_threshold) then
+                make_splash(pl.x+2,pl.y+7,pl.dx*0.5,0.3,speed)
+                make_splash(pl.x+4,pl.y+7,pl.dx*0.5,0.3,speed)
+                make_splash(pl.x+6,pl.y+7,pl.dx*0.5,0.3,speed)
+            end
+        elseif(pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
+            if(speed > splash_threshold) then
+                make_splash(pl.x+2,pl.y+6,-speed,0.3,speed)
+                make_splash(pl.x+4,pl.y+4,-speed,0.3,speed)
+                make_splash(pl.x+6,pl.y+2,-speed,0.3,speed)
+                make_splash(pl.x+4,pl.y+8,speed,0.3,speed)
+                make_splash(pl.x+6,pl.y+6,speed,0.3,speed)
+                make_splash(pl.x+8,pl.y+4,speed,0.3,speed)
+            end
+        elseif(pl.dir == dir_map.nw or pl.dir == dir_map.se) then
+            if(speed > splash_threshold) then
+                make_splash(pl.x+1,pl.y+4,-speed,0.3,speed)
+                make_splash(pl.x+3,pl.y+6,-speed,0.3,speed)
+                make_splash(pl.x+5,pl.y+8,-speed,0.3,speed)
+                make_splash(pl.x+4,pl.y+2,speed,0.3,speed)
+                make_splash(pl.x+6,pl.y+4,speed,0.3,speed)
+                make_splash(pl.x+8,pl.y+6,speed,0.3,speed)
+            end
         end
     end
     
@@ -197,12 +199,20 @@ function update_particle(p)
 
 function move_player(p)
     -- acceleration based on input
+
+    local max_delta = 2
     if (btn(⬅️)) then
         p.dx -= p.spd
     elseif (btn(➡️)) then
         p.dx += p.spd
     else
         p.dx *= 0.8  -- deceleration when no input
+    end
+
+    if(p.dx > max_delta) then 
+        p.dx = max_delta  
+    elseif (p.dx < -max_delta) then
+        p.dx = -max_delta
     end
     
     if (btn(⬆️)) then
@@ -211,6 +221,12 @@ function move_player(p)
         p.dy += p.spd
     else
         p.dy *= 0.8  -- deceleration when no input
+    end
+
+    if(p.dy > max_delta) then 
+        p.dy = max_delta  
+    elseif (p.dy < -max_delta) then
+        p.dy = -max_delta
     end
     
     -- jump when O is pressed and we're on the water
