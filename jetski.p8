@@ -1,96 +1,60 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-
-debug=true
+debug = true
 
 pl = {
- x = 64,
- y = 64,
- dx = 0,
- dy = 0,
- z = 0,    -- height above water
- dz = 0,   -- vertical velocity
- g = 0.5,  -- gravity
- jump_power = 2.5, -- initial jump velocity
- spd = 0.08,  -- same speed as basics.p8
- dir = 0
+    x = 64,
+    y = 64,
+    dx = 0,
+    dy = 0,
+    z = 0, -- height above water
+    dz = 0, -- vertical velocity
+    g = 0.5, -- gravity
+    jump_power = 6, -- initial jump velocity
+    spd = 0.08, -- same speed as basics.p8
+    dir = 0
 }
 
 dir_map = {
- n = 4,
- s = 6,
- e = 0,
- w = -1,
- nw = -2,
- ne = 2,
- sw = -8,
- se = 8,
+    n = 4,
+    s = 6,
+    e = 0,
+    w = -1,
+    nw = -2,
+    ne = 2,
+    sw = -8,
+    se = 8
 }
 
 function _init()
-    splash={}
-    particles={}
-    shadow={
-        x0=0,
-        y0=0,
-        x1=0,
-        y1=0
+    splash = {}
+    particles = {}
+    shadow = {
+        x0 = 0,
+        y0 = 0,
+        x1 = 0,
+        y1 = 0
     }
     frame_count = 0
     sprite_index = 0
-    
+
     -- initialize camera with tracking
     cam_x = 0
     cam_y = 0
-    track_spd = 0.05  -- smooth camera tracking speed
-    ctrack = pl       -- what the camera is tracking
+    track_spd = 0.1
+    -- smooth camera tracking speed
+    ctrack = pl
+    -- what the camera is tracking
 end
 
 function _update()
     move_player(pl)
     get_direction()
     frame_count += 1
-    local speed = (max(abs(pl.dx), abs(pl.dy))*0.3)
-    local splash_threshold = 0.05
-    
-    if(pl.z == 0) then
-        if(pl.dir == dir_map.n or pl.dir == dir_map.s) then
-            if(speed > splash_threshold) then
-                make_splash(pl.x,pl.y+2,-speed,pl.dy,speed)
-                make_splash(pl.x,pl.y+4,-speed,pl.dy,speed)
-                make_splash(pl.x,pl.y+6,-speed,pl.dy,speed)
-                make_splash(pl.x+8,pl.y+2,speed,pl.dy,speed)
-                make_splash(pl.x+8,pl.y+4,speed,pl.dy,speed)
-                make_splash(pl.x+8,pl.y+6,speed,pl.dy,speed)
-            end
-        elseif(pl.dir == dir_map.e or pl.dir == dir_map.w) then
-            if(speed > splash_threshold) then
-                make_splash(pl.x+2,pl.y+7,pl.dx*0.5,0.3,speed)
-                make_splash(pl.x+4,pl.y+7,pl.dx*0.5,0.3,speed)
-                make_splash(pl.x+6,pl.y+7,pl.dx*0.5,0.3,speed)
-            end
-        elseif(pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
-            if(speed > splash_threshold) then
-                make_splash(pl.x+2,pl.y+6,-speed,0.3,speed)
-                make_splash(pl.x+4,pl.y+4,-speed,0.3,speed)
-                make_splash(pl.x+6,pl.y+2,-speed,0.3,speed)
-                make_splash(pl.x+4,pl.y+8,speed,0.3,speed)
-                make_splash(pl.x+6,pl.y+6,speed,0.3,speed)
-                make_splash(pl.x+8,pl.y+4,speed,0.3,speed)
-            end
-        elseif(pl.dir == dir_map.nw or pl.dir == dir_map.se) then
-            if(speed > splash_threshold) then
-                make_splash(pl.x+1,pl.y+4,-speed,0.3,speed)
-                make_splash(pl.x+3,pl.y+6,-speed,0.3,speed)
-                make_splash(pl.x+5,pl.y+8,-speed,0.3,speed)
-                make_splash(pl.x+4,pl.y+2,speed,0.3,speed)
-                make_splash(pl.x+6,pl.y+4,speed,0.3,speed)
-                make_splash(pl.x+8,pl.y+6,speed,0.3,speed)
-            end
-        end
-    end
-    
+
+    update_splashes()
+
     -- smooth camera tracking
     if ctrack then
         cam_x += ((ctrack.x - 64) - cam_x) * track_spd
@@ -99,37 +63,69 @@ function _update()
 
     cam_x = mid(0, cam_x, 184)
     cam_y = mid(0, cam_y, 36)
-
 end
 
 function _draw()
     cls(12)
-    
+
     camera(cam_x, cam_y)
 
     map(0, 0, 0, 0, 39, 39)
 
     draw_shadow()
 
-    for p in all(particles) do
-        update_particle(p)
-        pset(p.x,p.y-p.z,p.col)
-    end
+    draw_particles()
 
     draw_player()
     --print(cam_x, pl.x+16, pl.y-10, 7)
     --print(cam_y, pl.x+16, pl.y-4, 7)
     --print(pl.x, pl.x+16, pl.y+2, 7)
     --print(pl.y, pl.x+16, pl.y+8, 7)
+    print(stat(1), pl.x + 16, pl.y + 8, 7)
 end
 
 function draw_shadow()
-    spr(sprite_index+32, pl.x-5-(pl.z/4), pl.y-3, 2, 2, flip_x)
-end 
+    spr(sprite_index + 32, pl.x - 5 - (pl.z / 4), pl.y - 3, 2, 2, flip_x)
+end
 
-function draw_player() 
+function draw_player()
     -- draw player at height z
-    spr(sprite_index, pl.x-4, pl.y-4-pl.z, 2, 2, flip_x)
+    spr(sprite_index, pl.x - 4, pl.y - 4 - pl.z, 2, 2, flip_x)
+end
+
+function update_splashes()
+    local speed = (max(abs(pl.dx), abs(pl.dy)) * 0.3)
+    local splash_threshold = 0.05
+    if (pl.z == 0) then
+        if (pl.dir == dir_map.n or pl.dir == dir_map.s) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x, pl.y + 2, -speed, pl.dy, speed)
+                make_splash(pl.x, pl.y + 6, -speed, pl.dy, speed)
+                make_splash(pl.x + 8, pl.y + 2, speed, pl.dy, speed)
+                make_splash(pl.x + 8, pl.y + 6, speed, pl.dy, speed)
+            end
+        elseif (pl.dir == dir_map.e or pl.dir == dir_map.w) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 2, pl.y + 7, pl.dx * 0.5, 0.3, speed)
+                make_splash(pl.x + 4, pl.y + 7, pl.dx * 0.5, 0.3, speed)
+                make_splash(pl.x + 6, pl.y + 7, pl.dx * 0.5, 0.3, speed)
+            end
+        elseif (pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 2, pl.y + 6, -speed, 0.3, speed)
+                make_splash(pl.x + 6, pl.y + 2, -speed, 0.3, speed)
+                make_splash(pl.x + 4, pl.y + 8, speed, 0.3, speed)
+                make_splash(pl.x + 8, pl.y + 4, speed, 0.3, speed)
+            end
+        elseif (pl.dir == dir_map.nw or pl.dir == dir_map.se) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 1, pl.y + 4, -speed, 0.3, speed)
+                make_splash(pl.x + 5, pl.y + 8, -speed, 0.3, speed)
+                make_splash(pl.x + 4, pl.y + 2, speed, 0.3, speed)
+                make_splash(pl.x + 8, pl.y + 6, speed, 0.3, speed)
+            end
+        end
+    end
 end
 
 function get_direction()
@@ -137,17 +133,25 @@ function get_direction()
     local down = btn(⬇️)
     local left = btn(⬅️)
     local right = btn(➡️)
-    
+
     -- Determine compass direction
     dir_key = ""
     if up then
-        if right then dir_key = "ne"
-        elseif left then dir_key = "nw"
-        else dir_key = "n" end
+        if right then
+            dir_key = "ne"
+        elseif left then
+            dir_key = "nw"
+        else
+            dir_key = "n"
+        end
     elseif down then
-        if right then dir_key = "se"
-        elseif left then dir_key = "sw"
-        else dir_key = "s" end
+        if right then
+            dir_key = "se"
+        elseif left then
+            dir_key = "sw"
+        else
+            dir_key = "s"
+        end
     elseif right then
         dir_key = "e"
     elseif left then
@@ -156,11 +160,10 @@ function get_direction()
         return -- no input
     end
 
-    
     pl.dir = dir_map[dir_key]
     sprite_index = abs(pl.dir)
     flip_x = pl.dir < 0
-    if(pl.dir == -1) then
+    if (pl.dir == -1) then
         sprite_index = 0
     end
 end
@@ -168,94 +171,102 @@ end
 -->8
 --particles
 
-function make_splash(x,y,dx,dy,dz)
-
-	for i=1,4 do
-		add(particles, {
-		 x=x, y=y,
-		 z=0, g=1,
-		 dx=dx+(rnd()-0.5)*0.5,
-		 dy=dy+(rnd()-0.5)*0.5,
-		 dz=dz+(rnd()-0.5)*0.5,
-		 life=20,
-		 col=7
-		})
-	end
+function make_splash(x, y, dx, dy, dz)
+    for i = 1, 2 do
+        add(
+            particles, {
+                x = x, y = y,
+                z = 0, g = 1,
+                dx = dx + (rnd() - 0.5) * 0.5,
+                dy = dy + (rnd() - 0.5) * 0.5,
+                dz = dz + (rnd() - 0.5) * 0.5,
+                life = 20,
+                col = 7
+            }
+        )
+    end
 end
 
 function update_particle(p)
-    p.z+=p.dz
-    p.dz-=0.05*p.g
-    p.y+=p.dy
-    p.x+=p.dx
-    p.life-=1
-    if p.z<0 or p.life<=0 then
-     del(particles,p)
+    p.z += p.dz
+    p.dz -= 0.05 * p.g
+    p.y += p.dy
+    p.x += p.dx
+    p.life -= 1
+    if p.z < 0 or p.life <= 0 then
+        del(particles, p)
     end
-   end
+end
+
+function draw_particles()
+    for p in all(particles) do
+        update_particle(p)
+        pset(p.x, p.y - p.z, p.col)
+    end
+end
 
 -->8
 --player
 
 function move_player(p)
     -- acceleration based on input
-
-    local max_delta = 2.5
-    if (btn(⬅️)) then
+    local max_delta = 3.0
+    if btn(⬅️) then
         p.dx -= p.spd
-    elseif (btn(➡️)) then
+    elseif btn(➡️) then
         p.dx += p.spd
     else
-        p.dx *= 0.8  -- deceleration when no input
+        p.dx *= 0.8 -- deceleration when no input
     end
 
-    if(p.dx > max_delta) then 
-        p.dx = max_delta  
+    if (p.dx > max_delta) then
+        p.dx = max_delta
     elseif (p.dx < -max_delta) then
         p.dx = -max_delta
     end
-    
-    if (btn(⬆️)) then
+
+    if btn(⬆️) then
         p.dy -= p.spd
-    elseif (btn(⬇️)) then
+    elseif btn(⬇️) then
         p.dy += p.spd
     else
-        p.dy *= 0.8  -- deceleration when no input
+        p.dy *= 0.8 -- deceleration when no input
     end
 
-    if(p.dy > max_delta) then 
-        p.dy = max_delta  
+    if (p.dy > max_delta) then
+        p.dy = max_delta
     elseif (p.dy < -max_delta) then
         p.dy = -max_delta
     end
-    
+
     -- jump when O is pressed and we're on the water
     if (btn(🅾️) and p.z <= 0) then
         p.dz = p.jump_power
     end
-    
+
     -- apply gravity and update z position
     p.dz -= p.g
     p.z += p.dz
-    
+
     -- bounce off water with 30% of velocity maintained
     if p.z < 0 then
         p.z = 0
-        if p.dz < -1 then  -- only splash if we hit with some speed
-            for i=1,25 do
-                make_splash(p.x + ((i/25)*8), p.y+8, p.dx*(rnd()-0.5), p.dy*(rnd()-0.5), 0.4)
+        if p.dz < -1 then
+            -- only splash if we hit with some speed
+            for i = 1, 25 do
+                make_splash(p.x + ((i / 25) * 8), p.y + 8, p.dx * (rnd() - 0.5), p.dy * (rnd() - 0.5), 0.4)
             end
         end
         p.dz = 0
     end
-    
+
     -- update position
     p.x += p.dx
     p.y += p.dy
-    
+
     -- keep in bounds (optional)
     p.x = mid(0, p.x, 304)
-    p.y = mid(0, p.y, 112)
+    p.y = mid(0, p.y, 165)
 end
 
 __gfx__
@@ -339,13 +350,13 @@ ccccccccccccccccccccccccccccccccccccccc7fff5999fff533333333333333333333333333333
 ccccccccccccccccccccccccccccccccccccc77ffff555ffff533333333333333333333333333333f7ffffffffff5552eeffffffffffff5f4433333333333333
 ccccccccccccccccccccccccccccccccccc777ffffffffffff333333333333333333333333b33333ffffffffffffff555ffffffffffffff3333333333bb33333
 cccccccccccccccccccccccc777777777777ffffffffffffff333333333333333333333333333333fffffffffffffffffffffffffff4433333333333bbbb3333
-cccccccccccccccccccccc777fffffffffffffffffffffffff3333333333333333333333ff333333fffffffffffffffffffffffffff5f3333333333333333333
-cccccccccccccccccccc777ffffffffffffffffff4fffffff43333333333333333333333f4333333ffffffffffffffffffffffffff3333333333333333333333
-ccccccccccccccccc777ffffffffffffffffffffffffffffff33333333b3333333333333ff333333fffffffffffffffffffff44f333333333333333333333333
-ccccccccccccccc777ffffffffffffffffff45ffffffffffff3333333333333333333333ff333333ffffffffffffffffffffff34333333333333333333333333
-ccccccccccccc777fffffffffffffffffffffffffffffffff35333333333333333333333f3533333fffffffffffffffffffff333333333333333333333333333
-cccccccccccc77fffffffffffffffffffffffffffffffffff33333333333b33333333333f33333335555f44444ffffff4f3f3333333333333333333333bb3333
-cccccccccccc7ffffffffffffffffffffffffffffffffff443333333333333333333333343333333ff3333333344444433333333333333333333333333bb3333
+cccccccccccccccccccccc777fffffffffffffffffffffffff333333333333333333333333333333fffffffffffffffffffffffffff5f3333333333333333333
+cccccccccccccccccccc777ffffffffffffffffff4fffffff4333333333333333333333333333333ffffffffffffffffffffffffff3333333333333333333333
+ccccccccccccccccc777ffffffffffffffffffffffffffffff33333333b333333333333333b33333fffffffffffffffffffff44f333333333333333333333333
+ccccccccccccccc777ffffffffffffffffff45ffffffffffff333333333333333333333333333333ffffffffffffffffffffff34333333333333333333333333
+ccccccccccccc777fffffffffffffffffffffffffffffffff3533333333333333333333333333333fffffffffffffffffffff333333333333333333333333333
+cccccccccccc77fffffffffffffffffffffffffffffffffff33333333333b3333333333333333b335555f44444ffffff4f3f3333333333333333333333bb3333
+cccccccccccc7ffffffffffffffffffffffffffffffffff443333333333333333333333333333333ff3333333344444433333333333333333333333333bb3333
 ccccccccccc77fffffffff88eeffffffffffffffffffffff333333333333333333b33333333333333333333333b33333333333333333333b3333333333333333
 ccccccccccc7fffffffff588eeefffffffffffffffffff553333333333333333333333333333333333333333333333333333333333333333333333333bbbb333
 cccccccccc77fffffffff888e77effffffffffffffffff533333333333333333333333333333333333333333333333333333333333333333333333333bbbb333
@@ -387,6 +398,9 @@ ccccccccc7fffffffffffffffffffffffff4433333333333bbbb333333333333333b3333bbbb3333
 0000000000000000000000000000000000000000000000000000000000000000ccccccc7ffff3333000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000ccccccc7ffff3333000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000ccccccc7fff53333000000000000000000000000000000000000000000000000
+__gff__
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000000202020200020202020100000000000200010101020202020101000002020202010101010202000101010002020202000101010101010101000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 40414a4b4c4d4d4a4b4c4d4a4b4c4d4a4b4c4d4a4b4c4d4a4b4c4a4b4a4b4c4d4a4b4c4d4dc8c90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 50515a5b5c5d5d5a5b5c5d5a5b5c5d5a5b5c5d5a5b5c5d5a5b6c6d6c5a565746475c5d5c5dd8d90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -403,7 +417,7 @@ __map__
 484946475756575657566c6d576c6d5657566c6d6d56575d6c6d6c464746474647464746477e7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 5859565747464780815c5d46474647465c5d5c5d5c5d6c6d6c6a6b5657565756575657565762630000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 68694647575c5d46476c6d56575c5d566c6d6c6d6c6d8586877a7b7c7d7a7b7c7d7a7b7c7d72730000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-78795657466c6d5657475c5d466c6d81829091920194959697babbbcbdbea7a8a7a8a7a8a7a8a7a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+78795657466c6d5657475c5d466c6d81829091926d94959697babbbcbdbea7a8a7a8a7a8a7a8a7a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 48495c5d5c5d565756466c6d5657565756a0a1a2a3a4a5a6a7ba97989897b7b8b7b8b7bdbeb89fb800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 58596c6d6c6d4747465657474647464647b0b1b2b3b4b5b6b798a7b698a7a7bdbea8a7a8a798a7a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 60616b6c6d6a6b6c6d6a6b6c6d6a6b6c6d6263acadaeafbabababbbc98beb7b8b7b8b7b8b7b8b7b800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -416,3 +430,5 @@ bdbebabb9798beba9798bdbeba9798bdbebaa7a8bd979897989798babbbcbd000000000000000000
 bdbebabba7a8bebaa7a8aeafbaa7a8bdbeb6b7a8bda7a8a7a8a7a8ba9798bd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 bdbeba9798bdbeba9798bdbeba9798bdbe9798bcbdbebabbb6b7bebaa7a8bd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000baa7a8bdbebaa7a8bdbebaa7a8bdbea7a8bcbdbebabbbcbdbebabbbcbd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+0001000c1105008050100500e050030500a0500405002050000000000000000000000000001000020000200002000000000000007000000000100000000000000000000000000000000000000000000000000000
