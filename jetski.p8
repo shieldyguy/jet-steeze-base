@@ -37,6 +37,7 @@ function _init()
         y1 = 0
     }
     frame_count = 0
+
     sprite_index = 0
 
     -- initialize camera with tracking
@@ -45,15 +46,32 @@ function _init()
     track_spd = 0.1
     -- smooth camera tracking speed
     ctrack = pl
-    -- what the camera is tracking
+
+    terrain = {
+        forest = {
+            flag = 0,
+            particle_color = 11,
+            collision = false
+        },
+        beach = {
+            flag = 1,
+            particle_color = 4,
+            collision = false
+        },
+        water = {
+            flag = 7,
+            particle_color = 7,
+            collision = false
+        }
+    }
 end
 
 function _update()
-    move_player(pl)
-    get_direction()
     frame_count += 1
 
-    update_splashes()
+    move_player(pl)
+    trigger_splashes()
+    get_terrain_collision()
 
     -- smooth camera tracking
     if ctrack then
@@ -72,19 +90,106 @@ function _draw()
 
     map(0, 0, 0, 0, 39, 39)
 
-    draw_shadow()
-
+    draw_player_shadow()
     draw_particles()
-
     draw_player()
     --print(cam_x, pl.x+16, pl.y-10, 7)
     --print(cam_y, pl.x+16, pl.y-4, 7)
     --print(pl.x, pl.x+16, pl.y+2, 7)
     --print(pl.y, pl.x+16, pl.y+8, 7)
     print(stat(1), pl.x + 16, pl.y + 8, 7)
+    --print(map_collision(pl, 0), pl.x + 16, pl.y + 8, 7)
+    --print(map_collision(pl, 1), pl.x + 16, pl.y + 15, 7)
+    --print(terrain.forest.collision, pl.x + 16, pl.y + 15, 7)
 end
 
-function draw_shadow()
+function trigger_splashes()
+    -- determine splash color based on collision
+    -- default to white
+    local col = 7
+    if terrain.forest.collision then
+        -- grass
+        col = terrain.forest.particle_color
+    elseif terrain.beach.collision then
+        --  sand
+        col = terrain.beach.particle_color
+    end
+
+    local speed = (max(abs(pl.dx), abs(pl.dy)) * 0.3)
+    local splash_threshold = 0.05
+    if (pl.z == 0) then
+        if (pl.dir == dir_map.n or pl.dir == dir_map.s) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x, pl.y + 2, -speed, pl.dy, speed, col)
+                make_splash(pl.x, pl.y + 6, -speed, pl.dy, speed, col)
+                make_splash(pl.x + 8, pl.y + 2, speed, pl.dy, speed, col)
+                make_splash(pl.x + 8, pl.y + 6, speed, pl.dy, speed, col)
+            end
+        elseif (pl.dir == dir_map.e or pl.dir == dir_map.w) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 2, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
+                make_splash(pl.x + 4, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
+                make_splash(pl.x + 6, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
+            end
+        elseif (pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 2, pl.y + 6, -speed, 0.3, speed, col)
+                make_splash(pl.x + 6, pl.y + 2, -speed, 0.3, speed, col)
+                make_splash(pl.x + 4, pl.y + 8, speed, 0.3, speed, col)
+                make_splash(pl.x + 8, pl.y + 4, speed, 0.3, speed, col)
+            end
+        elseif (pl.dir == dir_map.nw or pl.dir == dir_map.se) then
+            if (speed > splash_threshold) then
+                make_splash(pl.x + 1, pl.y + 4, -speed, 0.3, speed, col)
+                make_splash(pl.x + 5, pl.y + 8, -speed, 0.3, speed, col)
+                make_splash(pl.x + 4, pl.y + 2, speed, 0.3, speed, col)
+                make_splash(pl.x + 8, pl.y + 6, speed, 0.3, speed, col)
+            end
+        end
+    end
+end
+
+-->8
+--particles
+
+function make_splash(x, y, dx, dy, dz, col)
+    for i = 1, 2 do
+        add(
+            particles, {
+                x = x, y = y,
+                z = 0, g = 1,
+                dx = dx + (rnd() - 0.5) * 0.5,
+                dy = dy + (rnd() - 0.5) * 0.5,
+                dz = dz + (rnd() - 0.5) * 0.5,
+                life = 20,
+                col = col
+            }
+        )
+    end
+end
+
+function update_particle(p)
+    p.z += p.dz
+    p.dz -= 0.05 * p.g
+    p.y += p.dy
+    p.x += p.dx
+    p.life -= 1
+    if p.z < 0 or p.life <= 0 then
+        del(particles, p)
+    end
+end
+
+function draw_particles()
+    for p in all(particles) do
+        update_particle(p)
+        pset(p.x, p.y - p.z, p.col)
+    end
+end
+
+-->8
+--player
+
+function draw_player_shadow()
     spr(sprite_index + 32, pl.x - 5 - (pl.z / 4), pl.y - 3, 2, 2, flip_x)
 end
 
@@ -93,47 +198,22 @@ function draw_player()
     spr(sprite_index, pl.x - 4, pl.y - 4 - pl.z, 2, 2, flip_x)
 end
 
-function update_splashes()
-    local speed = (max(abs(pl.dx), abs(pl.dy)) * 0.3)
-    local splash_threshold = 0.05
-    if (pl.z == 0) then
-        if (pl.dir == dir_map.n or pl.dir == dir_map.s) then
-            if (speed > splash_threshold) then
-                make_splash(pl.x, pl.y + 2, -speed, pl.dy, speed)
-                make_splash(pl.x, pl.y + 6, -speed, pl.dy, speed)
-                make_splash(pl.x + 8, pl.y + 2, speed, pl.dy, speed)
-                make_splash(pl.x + 8, pl.y + 6, speed, pl.dy, speed)
-            end
-        elseif (pl.dir == dir_map.e or pl.dir == dir_map.w) then
-            if (speed > splash_threshold) then
-                make_splash(pl.x + 2, pl.y + 7, pl.dx * 0.5, 0.3, speed)
-                make_splash(pl.x + 4, pl.y + 7, pl.dx * 0.5, 0.3, speed)
-                make_splash(pl.x + 6, pl.y + 7, pl.dx * 0.5, 0.3, speed)
-            end
-        elseif (pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
-            if (speed > splash_threshold) then
-                make_splash(pl.x + 2, pl.y + 6, -speed, 0.3, speed)
-                make_splash(pl.x + 6, pl.y + 2, -speed, 0.3, speed)
-                make_splash(pl.x + 4, pl.y + 8, speed, 0.3, speed)
-                make_splash(pl.x + 8, pl.y + 4, speed, 0.3, speed)
-            end
-        elseif (pl.dir == dir_map.nw or pl.dir == dir_map.se) then
-            if (speed > splash_threshold) then
-                make_splash(pl.x + 1, pl.y + 4, -speed, 0.3, speed)
-                make_splash(pl.x + 5, pl.y + 8, -speed, 0.3, speed)
-                make_splash(pl.x + 4, pl.y + 2, speed, 0.3, speed)
-                make_splash(pl.x + 8, pl.y + 6, speed, 0.3, speed)
-            end
+function map_collision(obj, flag)
+    local x, y = obj.x \ 8, obj.y \ 8
+    return fget(mget(x, y), flag)
+end
+
+function get_terrain_collision()
+    for name, t in pairs(terrain) do
+        if map_collision(pl, t.flag) then
+            t.collision = true
+        else
+            t.collision = false
         end
     end
 end
 
-function get_direction()
-    local up = btn(⬆️)
-    local down = btn(⬇️)
-    local left = btn(⬅️)
-    local right = btn(➡️)
-
+function get_direction(up, down, left, right)
     -- Determine compass direction
     dir_key = ""
     if up then
@@ -168,52 +248,19 @@ function get_direction()
     end
 end
 
--->8
---particles
-
-function make_splash(x, y, dx, dy, dz)
-    for i = 1, 2 do
-        add(
-            particles, {
-                x = x, y = y,
-                z = 0, g = 1,
-                dx = dx + (rnd() - 0.5) * 0.5,
-                dy = dy + (rnd() - 0.5) * 0.5,
-                dz = dz + (rnd() - 0.5) * 0.5,
-                life = 20,
-                col = 7
-            }
-        )
-    end
-end
-
-function update_particle(p)
-    p.z += p.dz
-    p.dz -= 0.05 * p.g
-    p.y += p.dy
-    p.x += p.dx
-    p.life -= 1
-    if p.z < 0 or p.life <= 0 then
-        del(particles, p)
-    end
-end
-
-function draw_particles()
-    for p in all(particles) do
-        update_particle(p)
-        pset(p.x, p.y - p.z, p.col)
-    end
-end
-
--->8
---player
-
 function move_player(p)
+    local up = btn(⬆️)
+    local down = btn(⬇️)
+    local left = btn(⬅️)
+    local right = btn(➡️)
+
+    get_direction(up, down, left, right)
+
     -- acceleration based on input
     local max_delta = 3.0
-    if btn(⬅️) then
+    if left then
         p.dx -= p.spd
-    elseif btn(➡️) then
+    elseif right then
         p.dx += p.spd
     else
         p.dx *= 0.8 -- deceleration when no input
@@ -225,9 +272,9 @@ function move_player(p)
         p.dx = -max_delta
     end
 
-    if btn(⬆️) then
+    if up then
         p.dy -= p.spd
-    elseif btn(⬇️) then
+    elseif down then
         p.dy += p.spd
     else
         p.dy *= 0.8 -- deceleration when no input
