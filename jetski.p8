@@ -64,6 +64,11 @@ function _init()
             collision = false
         }
     }
+
+    player_max_x = 304
+    player_max_y = 165
+    camera_max_x = 184
+    camera_max_y = 36
 end
 
 function _update()
@@ -79,8 +84,8 @@ function _update()
         cam_y += ((ctrack.y - 64) - cam_y) * track_spd
     end
 
-    cam_x = mid(0, cam_x, 184)
-    cam_y = mid(0, cam_y, 36)
+    cam_x = mid(0, cam_x, camera_max_x)
+    cam_y = mid(0, cam_y, camera_max_y)
 end
 
 function _draw()
@@ -312,8 +317,8 @@ function move_player(p)
     p.y += p.dy
 
     -- keep in bounds (optional)
-    p.x = mid(0, p.x, 304)
-    p.y = mid(0, p.y, 165)
+    p.x = mid(0, p.x, player_max_x)
+    p.y = mid(0, p.y, player_max_y)
 end
 
 __gfx__
