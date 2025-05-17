@@ -23,38 +23,48 @@ function dtb_disp(txt, speaker, callback)
     local lines = {}
     local currline = ""
     local curword = ""
-    local curchar = ""
-    local upt = function()
-        -- max characters per line
+
+    for i = 1, #txt do
+        local char = sub(txt, i, i)
+        curword = curword .. char
+
+        -- Process word when space is encountered or word is too long
+        if char == " " or #curword > 15 then
+            -- Add hyphen if word is broken due to length
+            if char != " " and #curword > 15 then
+                curword = curword .. "-"
+            end
+
+            -- Start new line if current won't fit
+            if #curword + #currline > 10 then
+                add(lines, currline)
+                currline = ""
+            end
+
+            -- Add word to line
+            currline = currline .. curword
+            curword = ""
+        end
+    end
+
+    -- Handle any remaining text
+    if #curword > 0 then
         if #curword + #currline > 10 then
             add(lines, currline)
-            currline = ""
-        end
-        currline = currline .. curword
-        curword = ""
-    end
-    for i = 1, #txt do
-        curchar = sub(txt, i, i)
-        curword = curword .. curchar
-        if curchar == " " then
-            upt()
-        elseif #curword > 15 then
-            -- reduced from 19 to fit in bubbles better
-            curword = curword .. "-"
-            upt()
+            currline = curword
+        else
+            currline = currline .. curword
         end
     end
-    upt()
-    if currline ~= "" then
+
+    if currline != "" then
         add(lines, currline)
     end
+
+    -- Add to queue
     add(dtb_queu, lines)
     add(dtb_speakers, speaker or pl)
-    -- default to player if no speaker specified
-    if callback == nil then
-        callback = 0
-    end
-    add(dtb_queuf, callback)
+    add(dtb_queuf, callback or 0)
 end
 
 -- functions with an underscore prefix are ment for internal use, don't worry about them.
