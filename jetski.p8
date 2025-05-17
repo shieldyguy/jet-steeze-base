@@ -1,7 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-
 #include dialogue_lib.p8
 
 debug = true
@@ -50,7 +49,7 @@ entities = {
             dialogue:show(
                 "wudup, steve!", self, function()
                     self.triggered = false
-                    dialogue:show("the red dot said to steve, 'wudup'", narrator)
+                    dialogue:show("the red dot said to steve, 'wudup'. red dot thought deeply to himself about the nature of his floaty biz, how float biz he is indeed!", narrator)
                 end
             )
         end,
