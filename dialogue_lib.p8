@@ -6,10 +6,8 @@ advance_button = 5
 -- call this before you start using dtb.
 -- optional parameter is the number of lines that are displayed. default is 3.
 function dtb_init(numlines)
-    dtb_queu = {}
-    dtb_queuf = {}
-    dtb_speakers = {}
-    -- track who is speaking for each dialogue entry
+    dialogue_pipeline = {}
+    -- Renamed and unified queue
     dtb_numlines = 3
     if numlines then
         dtb_numlines = numlines
@@ -61,10 +59,22 @@ function dtb_disp(txt, speaker, callback)
         add(lines, currline)
     end
 
-    -- Add to queue
-    add(dtb_queu, lines)
-    add(dtb_speakers, speaker or pl)
-    add(dtb_queuf, callback or 0)
+    -- Determine if narration
+    local is_narration = false
+    if speaker and speaker.name == "narrator" then
+        is_narration = true
+    end
+
+    -- Create unified dialogue entry
+    local entry = {
+        text_lines = lines,
+        speaker_entity = speaker or pl, -- Default to pl if no speaker
+        on_finish_callback = callback or 0,
+        is_narration = is_narration
+    }
+
+    -- Add to the single pipeline
+    add(dialogue_pipeline, entry)
 end
 
 -- functions with an underscore prefix are ment for internal use, don't worry about them.
@@ -83,9 +93,10 @@ function _dtb_nextline()
         dtb_dislines[i] = dtb_dislines[i + 1]
     end
 
+    local current_entry = dialogue_pipeline[1]
     -- Instead of setting to empty string, immediately add the first character
-    if dtb_curline <= #dtb_queu[1] then
-        dtb_dislines[#dtb_dislines] = sub(dtb_queu[1][dtb_curline], 1, 1)
+    if current_entry and dtb_curline <= #current_entry.text_lines then
+        dtb_dislines[#dtb_dislines] = sub(current_entry.text_lines[dtb_curline], 1, 1)
         dtb_ltime = 1 -- Reset the typing timer
     else
         dtb_dislines[#dtb_dislines] = ""
@@ -94,12 +105,13 @@ function _dtb_nextline()
 end
 
 function _dtb_nexttext()
-    if dtb_queuf[1] ~= 0 then
-        dtb_queuf[1]()
+    local current_entry = dialogue_pipeline[1]
+    if current_entry and current_entry.on_finish_callback ~= 0 then
+        current_entry.on_finish_callback()
     end
-    del(dtb_queuf, dtb_queuf[1])
-    del(dtb_queu, dtb_queu[1])
-    del(dtb_speakers, dtb_speakers[1])
+    if #dialogue_pipeline > 0 then
+        del(dialogue_pipeline, dialogue_pipeline[1]) -- Remove from the unified pipeline
+    end
     _dtb_clean()
     sfx(2)
 end
@@ -224,20 +236,33 @@ end
 
 -- make sure that this function is called each update.
 function dtb_update()
-    if #dtb_queu > 0 then
+    if #dialogue_pipeline > 0 then
+        local current_entry = dialogue_pipeline[1] -- Get the current dialogue entry
+
         if dtb_curline == 0 then
             dtb_curline = 1
         end
         local dislineslength = #dtb_dislines
-        local curlines = dtb_queu[1]
+        local curlines = current_entry.text_lines -- New way: text comes from the current entry
         local curlinelength = #dtb_dislines[dislineslength]
-        local complete = curlinelength >= #curlines[dtb_curline]
+
+        -- Check if the current line is complete and if it's the last line of the message
+        local complete = false
+        if dtb_curline > 0 and dtb_curline <= #curlines then
+            -- ensure curlines[dtb_curline] is valid
+            complete = curlinelength >= #curlines[dtb_curline]
+        elseif dtb_curline > #curlines then
+            -- handles cases where dtb_curline might have overshot (e.g. empty text)
+            complete = true
+        end
+
         if complete and dtb_curline >= #curlines then
             if btnp(advance_button) then
                 _dtb_nexttext()
                 return
             end
-        elseif dtb_curline > 0 then
+        elseif dtb_curline > 0 and dtb_curline <= #curlines then
+            -- Ensure dtb_curline is valid for curlines
             dtb_ltime -= 1
             if not complete then
                 if dtb_ltime <= 0 then
@@ -256,6 +281,7 @@ function dtb_update()
                     dtb_dislines[dislineslength] = curlines[dtb_curline]
                 end
             else
+                -- Line is complete, but not the last line of the message
                 _dtb_nextline()
             end
         end
@@ -264,8 +290,10 @@ end
 
 -- make sure to call this function everytime you draw.
 function dtb_draw()
-    if #dtb_queu > 0 then
-        local speaker = dtb_speakers[1]
+    if #dialogue_pipeline > 0 then
+        local current_entry = dialogue_pipeline[1] -- Get the current dialogue entry
+        local speaker = current_entry.speaker_entity -- Get speaker from the entry
+        local narration = current_entry.is_narration -- Get narration flag from the entry
         local dislineslength = #dtb_dislines
 
         -- determine if we need to flip based on screen position
@@ -293,13 +321,13 @@ function dtb_draw()
         local bubble_width = 8
 
         local line_height = 6
+        local narration_offset = 0 -- Initialize narration_offset
 
-        if speaker.name == "narrator" then
-            narration = true
+        -- The 'narration' variable is now directly from current_entry.is_narration
+        -- The logic to set narration_offset based on speaker.name == "narrator" is now implicitly handled
+        -- by current_entry.is_narration, but the offset calculation itself still needs to happen.
+        if narration then
             narration_offset = used_lines * line_height
-        else
-            narration = false
-            narration_offset = 0
         end
 
         -- draw the bubble
