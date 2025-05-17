@@ -120,6 +120,10 @@ function _init()
     --dtb_disp("hallo! \n i'm steve.", pl)
     --dtb_disp("one line", pl)
     dialogue:show("welcome!", narrator)
+    dialogue:show("t", narrator)
+    dialogue:show("te", narrator)
+    dialogue:show("test", narrator)
+    dialogue:show("testing!", narrator)
 end
 
 function _update()
