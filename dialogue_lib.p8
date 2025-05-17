@@ -72,7 +72,14 @@ function _dtb_nextline()
     for i = 1, #dtb_dislines - 1 do
         dtb_dislines[i] = dtb_dislines[i + 1]
     end
-    dtb_dislines[#dtb_dislines] = ""
+
+    -- Instead of setting to empty string, immediately add the first character
+    if dtb_curline <= #dtb_queu[1] then
+        dtb_dislines[#dtb_dislines] = sub(dtb_queu[1][dtb_curline], 1, 1)
+        dtb_ltime = 1 -- Reset the typing timer
+    else
+        dtb_dislines[#dtb_dislines] = ""
+    end
     sfx(2)
 end
 

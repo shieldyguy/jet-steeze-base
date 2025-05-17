@@ -1,7 +1,6 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-#include dialogue.p8
 #include dialogue_lib.p8
 
 debug = true
@@ -78,7 +77,7 @@ function _init()
     -- add some test dialogue (can be removed in production)
     dtb_disp("welcome to jetski!", pl)
     dtb_disp("use the arrow keys to move around.", pl)
-    dtb_disp("press o to jump when on the water.", pl)
+    dtb_disp("press o to jump when on the water. if my text is really long, it will wrap around to the next line.", pl)
 end
 
 function _update()
@@ -87,23 +86,8 @@ function _update()
     move_player(pl)
     trigger_splashes()
     get_terrain_collision()
-
-    -- smooth camera tracking
-    if ctrack then
-        cam_x += ((ctrack.x - 64) - cam_x) * track_spd
-        cam_y += ((ctrack.y - 64) - cam_y) * track_spd
-    end
-
-    cam_x = mid(0, cam_x, camera_max_x)
-    cam_y = mid(0, cam_y, camera_max_y)
-
-    -- Update dialogue system
+    update_camera()
     dtb_update()
-
-    -- Also support the old dialogue system
-    dialogue.active = (#dtb_queu == 0)
-    -- only activate old system when library dialogue is done
-    --handle_dialogue()
 end
 
 flip_dialogue = true
@@ -134,6 +118,17 @@ function _draw()
     --print(map_collision(pl, 0), pl.x + 16, pl.y + 8, 7)
     --print(map_collision(pl, 1), pl.x + 16, pl.y + 15, 7)
     --print(terrain.forest.collision, pl.x + 16, pl.y + 15, 7)
+end
+
+function update_camera()
+    -- smooth camera tracking
+    if ctrack then
+        cam_x += ((ctrack.x - 64) - cam_x) * track_spd
+        cam_y += ((ctrack.y - 64) - cam_y) * track_spd
+    end
+
+    cam_x = mid(0, cam_x, camera_max_x)
+    cam_y = mid(0, cam_y, camera_max_y)
 end
 
 function trigger_splashes()
