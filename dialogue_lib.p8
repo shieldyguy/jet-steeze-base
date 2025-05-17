@@ -96,18 +96,23 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     y -= 8
     h += 1
 
+    local block_size = 6
+    local outline_color = 7
+    local fill_color = 1
+    local x_offset = 15
+
     -- establish left and right limits in pixel space
     local left_x, right_x
     if flipped then
-        x -= 20
+        x -= x_offset
         right_x = x -- anchor is bottom‑right
-        left_x = x - (w - 1) * 8
+        left_x = x - (w - 1) * block_size
     else
-        x += 20
+        x += x_offset
         left_x = x -- anchor is bottom‑left
-        right_x = x + (w - 1) * 8
+        right_x = x + (w - 1) * block_size
     end
-    local top_y = y - (h - 1) * 8
+    local top_y = y - (h - 1) * block_size
 
     -----------------------------------------------------------------------
     --  corners
@@ -116,45 +121,49 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     -- top corners (unchanged)
     spr(10, left_x, top_y, 1, 1, false, false)
     -- top‑left
-    spr(10, right_x, top_y, 1, 1, true, false)
+    spr(10, right_x - 2, top_y, 1, 1, true, false)
     -- top‑right
 
     if not flipped then
         -- ░░ arrow‑on‑left layout ░░
         -- bottom‑left = flat corner for arrow overlap
-        rectfill(left_x, y, left_x + 7, y + 7, 1)
-        line(left_x, y + 7, left_x + 7, y + 7, 7)
+        rectfill(left_x, y, left_x + block_size - 1, y + block_size - 1, fill_color)
+        line(left_x, y + block_size, left_x + block_size - 1, y + block_size, outline_color)
         -- bottom‑right = sprite corner
-        spr(10, right_x, y, 1, 1, true, true)
+        spr(10, right_x - 2, y - 1, 1, 1, true, true)
     else
         -- ░░ arrow‑on‑right layout ░░
         -- bottom‑right = flat corner for arrow overlap
-        rectfill(right_x, y, right_x + 7, y + 7, 1)
-        line(right_x, y + 7, right_x + 7, y + 7, 7)
+        rectfill(right_x, y, right_x + block_size - 1, y + block_size - 1, fill_color)
+        line(right_x, y + block_size, right_x + block_size - 1, y + block_size, outline_color)
         -- bottom‑left = sprite corner
-        spr(10, left_x, y, 1, 1, false, true)
+        spr(10, left_x, y - 1, 1, 1, false, true)
     end
 
     -----------------------------------------------------------------------
     --  top & bottom edges
     -----------------------------------------------------------------------
     for i = 1, w - 2 do
-        local seg_x = left_x + i * 8
-        spr(11, seg_x, top_y, 1, 1, false, false) -- top edge
-        spr(11, seg_x, y, 1, 1, false, true) -- bottom edge (flip_y)
+        local seg_x = left_x + i * block_size
+        -- top edge
+        rectfill(seg_x, top_y, seg_x + block_size, top_y + block_size, fill_color)
+        line(seg_x, top_y, seg_x + block_size, top_y, outline_color)
+        -- bottom edge
+        rectfill(seg_x, y, seg_x + block_size, y + block_size, fill_color)
+        line(seg_x, y + block_size, seg_x + block_size, y + block_size, outline_color)
     end
 
     -----------------------------------------------------------------------
     --  left & right edges
     -----------------------------------------------------------------------
     for j = 1, h - 2 do
-        local edge_y = top_y + j * 8
+        local edge_y = top_y + j * block_size
         -- left edge
-        rectfill(left_x, edge_y, left_x + 8, edge_y + 8, 1)
-        line(left_x, edge_y, left_x, edge_y + 8, 7)
+        rectfill(left_x, edge_y, left_x + block_size, edge_y + block_size, fill_color)
+        line(left_x, edge_y, left_x, edge_y + block_size, outline_color)
         -- right edge
-        rectfill(right_x, edge_y, right_x + 7, edge_y + 8, 1)
-        line(right_x + 7, edge_y, right_x + 7, edge_y + 8, 7)
+        rectfill(right_x, edge_y, right_x + block_size - 1, edge_y + block_size, fill_color)
+        line(right_x + block_size - 1, edge_y, right_x + block_size - 1, edge_y + block_size, outline_color)
     end
 
     -----------------------------------------------------------------------
@@ -163,8 +172,8 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     for i = 1, w - 2 do
         for j = 1, h - 2 do
             rectfill(
-                left_x + i * 8, top_y + j * 8,
-                left_x + i * 8 + 8, top_y + j * 8 + 8, 1
+                left_x + i * block_size, top_y + j * block_size,
+                left_x + i * block_size + block_size, top_y + j * block_size + block_size, fill_color
             )
         end
     end
@@ -174,12 +183,12 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     -----------------------------------------------------------------------
     if flipped then
         -- arrow sprite mirrored horizontally, sits just to the right
-        spr(12, x + 8, y, 1, 1, true, false)
-        pset(x + 7, y, 7)
+        spr(12, x + block_size - 1, y, 1, 1, true, false)
+        pset(x + block_size - 1, y, outline_color)
     else
         -- original left‑pointing arrow
-        spr(12, x - 8, y, 1, 1, false, false)
-        pset(x, y, 7)
+        spr(12, x - block_size, y, 1, 1, false, false)
+        pset(x, y, outline_color)
     end
 
     return top_y + 4, left_x + 4
@@ -252,72 +261,20 @@ function dtb_draw()
         -- bubble height exactly matches the content
         local bubble_height = max(2, used_lines)
 
-        -- fixed width of 5 tiles
-        local bubble_width = 6
+        -- fixed width
+        local bubble_width = 8
 
         -- draw the bubble
         local text_y, text_x = _dtb_draw_bubble(speaker.x, speaker.y, bubble_width, bubble_height, flipped)
 
         -- draw the text
+        local line_height = 6
         local line_number = 0
         for i = 1, dislineslength do
             if dtb_dislines[i] != "" then
                 line_number += 1
-                print(dtb_dislines[i], text_x, text_y + ((line_number - 1) * 8), 7)
+                print(dtb_dislines[i], text_x, text_y + ((line_number - 1) * line_height), 7)
             end
         end
-
-        -- draw advance indicator
-        if dtb_curline > 0 and dtb_curline >= #dtb_queu[1] and #dtb_dislines[#dtb_dislines] == #dtb_queu[1][dtb_curline] then
-            -- Find the last non-empty line
-            local last_line_idx = 0
-            for i = dislineslength, 1, -1 do
-                if dtb_dislines[i] != "" then
-                    last_line_idx = i
-                    break
-                end
-            end
-
-            local last_line_text = dtb_dislines[last_line_idx]
-            local indicator_x = flipped and (text_x - 6) or (text_x + 4 * #last_line_text + 2)
-            local indicator_y = text_y + (last_line_idx - 1) * 6
-            print("\x8e", indicator_x, indicator_y, 7)
-        end
     end
-end
-
---{ example usage }--
-
--- initialize
-dtb_init()
-
--- add text to the queu, this can be done at any point in time.
---dtb_disp("hello world! welcome to this amazing dialogue box!")
-
-dtb_disp("a dialogue can be queud with: dtb_disp(text,speaker,callback)")
-
-dtb_disp("this is a character speech bubble that follows characters!")
-
-dtb_disp(
-    "dtb_prompt also has a callback which is called when the piece of dialogue is finished.", nil, function()
-        --whatever is in this function is called after this dialogue is done.
-        sfx(1)
-    end
-)
-
-dtb_disp("just like that!")
-dtb_disp("another cool feature is that a . will take longer.")
-dtb_disp("which is great for some akward pauses... right?")
-dtb_disp("the bubble will flip automatically if near screen edges!")
-dtb_disp("oh and shorter lines now fit in these cool speech bubbles!")
-dtb_disp("anyways, feel free to use and/or modify this code!")
-
-function _update()
-    -- make sure to update dtb. no need for logic additional here, dtb takes care of everything.
-    dtb_update()
-end
-function _draw()
-    cls(6)
-    -- as with the update function. just make sure dtb is being drawn.
-    dtb_draw()
 end
