@@ -45,11 +45,14 @@ entities = {
         triggered = false,
         event = function(self)
             self.triggered = true
-            dialogue:show("woah, red dot!", pl)
+            dialogue:show("woah whachaoutna, red dot!", pl)
             dialogue:show(
                 "wudup, steve!", self, function()
                     self.triggered = false
-                    dialogue:show("the red dot said to steve, 'wudup'. red dot thought deeply to himself about the nature of his floaty biz, how float biz he is indeed!", narrator)
+                    dialogue:show("red dot thought deeply to himself about the nature of his floaty biz. 'nbd', he concluded. 'i am a floaty dot.'", narrator)
+                    dialogue:show("yo steve, i'm a floaty dot!", self)
+                    dialogue:show("f'kn sick!", pl)
+                    dialogue:show("i mean, i noticed but yeah yknow, sick.", pl)
                 end
             )
         end,

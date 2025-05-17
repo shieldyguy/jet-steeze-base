@@ -115,9 +115,9 @@ function dialogue:init(custom_advance_button_id)
 
         character_bubble = {
             width_tiles = 8,
-            max_lines = 3,
+            max_lines = 4,
             line_wrap_chars = 10,
-            hyphenate_word_len = 15
+            hyphenate_word_len = 8
         },
 
         narrator_bubble = {
