@@ -108,54 +108,36 @@ end
 -- x,y   : anchor pixel coordinate (bottom‑left if !flipped, bottom‑right if flipped)
 -- w,h   : width/height in 8×8 tiles
 -- flipped?: boolean, default false (true = arrow on the right)
-function _dtb_draw_bubble(x, y, w, h, flipped)
-    flipped = flipped or false
-    y -= 8
-    h += 1
-
+function _dtb_draw_bubble(x, y, w, h, flipped, narration)
     local block_size = 6
     local outline_color = 7
     local fill_color = 1
     local x_offset = 15
+    flipped = flipped or false
+
+    if narration then
+        x += peek2(0x5f28)
+        y += peek2(0x5f2a)
+    else
+        y -= 8
+        if flipped then
+            x -= x_offset
+        else
+            x += x_offset
+        end
+    end
+    h += 1
 
     -- establish left and right limits in pixel space
     local left_x, right_x
     if flipped then
-        x -= x_offset
         right_x = x -- anchor is bottom‑right
         left_x = x - (w - 1) * block_size
     else
-        x += x_offset
         left_x = x -- anchor is bottom‑left
         right_x = x + (w - 1) * block_size
     end
     local top_y = y - (h - 1) * block_size
-
-    -----------------------------------------------------------------------
-    --  corners
-    -----------------------------------------------------------------------
-
-    -- top corners (unchanged)
-    spr(10, left_x, top_y, 1, 1, false, false)
-    -- top‑left
-    spr(10, right_x - 2, top_y, 1, 1, true, false)
-    -- top‑right
-
-    if not flipped then
-        -- ░░ arrow‑on‑left layout ░░
-        -- bottom‑left = flat corner for arrow overlap
-        rectfill(left_x, y, left_x + block_size - 1, y + block_size - 1, fill_color)
-        line(left_x, y + block_size, left_x + block_size - 1, y + block_size, outline_color)
-        -- bottom‑right = sprite corner
-        spr(10, right_x - 2, y - 1, 1, 1, true, true)
-    else
-        -- ░░ arrow‑on‑right layout ░░
-        -- bottom‑right = flat corner for arrow overlap
-        rectfill(right_x, y, right_x + block_size - 1, y + block_size - 1, fill_color)
-        line(right_x, y + block_size, right_x + block_size - 1, y + block_size, outline_color)
-        -- bottom‑left = sprite corner
-        spr(10, left_x, y - 1, 1, 1, false, true)
-    end
 
     -----------------------------------------------------------------------
     --  top & bottom edges
@@ -192,16 +174,49 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     )
 
     -----------------------------------------------------------------------
-    --  arrow
+    --  corners
     -----------------------------------------------------------------------
-    if flipped then
-        -- arrow sprite mirrored horizontally, sits just to the right
-        spr(12, x + block_size - 1, y, 1, 1, true, false)
-        pset(x + block_size - 1, y, outline_color)
+
+    -- top corners (unchanged)
+    spr(10, left_x, top_y, 1, 1, false, false)
+    -- top‑left
+    spr(10, right_x - 2, top_y, 1, 1, true, false)
+    -- top‑right
+
+    if not narration then
+        if not flipped then
+            -- ░░ arrow‑on‑left layout ░░
+            -- bottom‑left = flat corner for arrow overlap
+            rectfill(left_x, y, left_x + block_size - 1, y + block_size - 1, fill_color)
+            line(left_x, y + block_size, left_x + block_size - 1, y + block_size, outline_color)
+            -- bottom‑right = sprite corner
+            spr(10, right_x - 2, y - 1, 1, 1, true, true)
+        else
+            -- ░░ arrow‑on‑right layout ░░
+            -- bottom‑right = flat corner for arrow overlap
+            rectfill(right_x, y, right_x + block_size - 1, y + block_size - 1, fill_color)
+            line(right_x, y + block_size, right_x + block_size - 1, y + block_size, outline_color)
+            -- bottom‑left = sprite corner
+            spr(10, left_x, y - 1, 1, 1, false, true)
+        end
+
+        -----------------------------------------------------------------------
+        --  arrow
+        -----------------------------------------------------------------------
+        if flipped then
+            -- arrow sprite mirrored horizontally, sits just to the right
+            spr(12, x + block_size - 1, y, 1, 1, true, false)
+            pset(x + block_size - 1, y, outline_color)
+        else
+            -- original left‑pointing arrow
+            spr(12, x - block_size, y, 1, 1, false, false)
+            pset(x, y, outline_color)
+        end
     else
-        -- original left‑pointing arrow
-        spr(12, x - block_size, y, 1, 1, false, false)
-        pset(x, y, outline_color)
+        -- bottom‑right = sprite corner
+        spr(10, right_x - 2, y - 1, 1, 1, true, true)
+        -- bottom‑left = sprite corner
+        spr(10, left_x, y - 1, 1, 1, false, true)
     end
 
     return top_y + 4, left_x + 4
@@ -277,11 +292,20 @@ function dtb_draw()
         -- fixed width
         local bubble_width = 8
 
+        local line_height = 6
+
+        if speaker.name == "narrator" then
+            narration = true
+            narration_offset = used_lines * line_height
+        else
+            narration = false
+            narration_offset = 0
+        end
+
         -- draw the bubble
-        local text_y, text_x = _dtb_draw_bubble(speaker.x, speaker.y, bubble_width, bubble_height, flipped)
+        local text_y, text_x = _dtb_draw_bubble(speaker.x, speaker.y + narration_offset, bubble_width, bubble_height, flipped, narration)
 
         -- draw the text
-        local line_height = 6
         local line_number = 0
         for i = 1, dislineslength do
             if dtb_dislines[i] != "" then

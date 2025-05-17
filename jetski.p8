@@ -17,6 +17,12 @@ pl = {
     dir = 0
 }
 
+narrator = {
+    name = "narrator",
+    x = 8,
+    y = 10
+}
+
 dir_map = {
     n = 4,
     s = 6,
@@ -40,7 +46,12 @@ entities = {
         event = function(self)
             self.triggered = true
             dtb_disp("woah, red dot!", pl)
-            dtb_disp("wudup, steve!", self, function() self.triggered = false end)
+            dtb_disp(
+                "wudup, steve!", self, function()
+                    self.triggered = false
+                    dtb_disp("the red dot said to steve, 'wudup'", narrator)
+                end
+            )
         end,
         draw = function(self)
             spr(self.sprite, self.x, self.y, 1, 1, false, false)
@@ -103,8 +114,9 @@ function _init()
     dtb_init()
 
     -- add some test dialogue (can be removed in production)
-    dtb_disp("hallo! \n i'm steve.", pl)
-    dtb_disp("one line", pl)
+    --dtb_disp("hallo! \n i'm steve.", pl)
+    --dtb_disp("one line", pl)
+    dtb_disp("welcome!", narrator)
 end
 
 function _update()
