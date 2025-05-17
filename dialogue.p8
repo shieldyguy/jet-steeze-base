@@ -4,6 +4,9 @@ __lua__
 -->8
 --dialogue
 
+-- Original bubble drawing function moved to dialogue_lib.p8
+-- This file now handles dialogue activation and coroutines
+
 -- dialogue ---------------------------------------------------------------
 -- draw a speech bubble, optional mirror around the anchor point
 -- x,y   : anchor pixel coordinate (bottom‑left if !flipped, bottom‑right if flipped)
@@ -96,5 +99,58 @@ function draw_bubble(x, y, w, h, flipped)
     else
         -- original left‑pointing arrow
         spr(12, x - 8, y, 1, 1, false, false)
+    end
+
+    return top_y + 3, left_x + 3
+end
+
+dialogue = {
+    active = false,
+    current_line = "",
+    line1 = "EY BUBBY!",
+    line2 = "i THINK IT'S WORKING, PAPA.",
+    line3 = "rOLL ON!"
+}
+
+function handle_dialogue()
+    if dialogue.active then
+        if btnp(5) then
+            coresume(d)
+        end
+    end
+end
+
+function dialogue_co()
+    dialogue.current_line = dialogue.line1
+    yield()
+    dialogue.current_line = dialogue.line2
+    yield()
+    dialogue.current_line = dialogue.line3
+    yield()
+end
+
+function draw_dialogue()
+    -- Only used if not using the dialogue_lib system
+    if dialogue.active and not dtb_queu then
+        local flip_dialogue = false
+        -- Check if player is on right side of screen
+        local camera_x = peek2(0x5f28)
+        if (pl.x - camera_x) > 90 then
+            flip_dialogue = true
+        end
+
+        local y, x = draw_bubble(pl.x, pl.y, 5, 3, flip_dialogue)
+        print(dialogue.current_line, x, y, 7)
+    end
+end
+
+d = cocreate(dialogue_co)
+
+-- Helper function to start a conversation using dialogue_lib
+function start_conversation(lines, speaker)
+    speaker = speaker or pl
+    dtb_init()
+    for line in all(lines) do
+        dtb_disp(line, speaker)
     end
 end
