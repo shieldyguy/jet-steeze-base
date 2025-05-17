@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
+
 #include dialogue_lib.p8
 
 debug = true
@@ -45,11 +46,11 @@ entities = {
         triggered = false,
         event = function(self)
             self.triggered = true
-            dtb_disp("woah, red dot!", pl)
-            dtb_disp(
+            dialogue:show("woah, red dot!", pl)
+            dialogue:show(
                 "wudup, steve!", self, function()
                     self.triggered = false
-                    dtb_disp("the red dot said to steve, 'wudup'", narrator)
+                    dialogue:show("the red dot said to steve, 'wudup'", narrator)
                 end
             )
         end,
@@ -111,12 +112,12 @@ function _init()
     camera_max_y = 36
 
     -- initialize dialogue system
-    dtb_init()
+    dialogue:init()
 
     -- add some test dialogue (can be removed in production)
     --dtb_disp("hallo! \n i'm steve.", pl)
     --dtb_disp("one line", pl)
-    dtb_disp("welcome!", narrator)
+    dialogue:show("welcome!", narrator)
 end
 
 function _update()
@@ -128,7 +129,7 @@ function _update()
     handle_entity_collisions()
     update_entities()
     update_camera()
-    dtb_update()
+    dialogue:update()
 end
 
 flip_dialogue = true
@@ -146,7 +147,7 @@ function _draw()
     draw_player()
 
     -- Draw dialogue box if active
-    dtb_draw()
+    dialogue:draw()
     --draw_dialogue()
 
     --draw_bubble(pl.x, pl.y, 5, 3, flip_dialogue)
@@ -574,4 +575,6 @@ bdbebabba7a8bebaa7a8aeafbaa7a8bdbeb6b7a8bda7a8a7a8a7a8ba9798bd000000000000000000
 bdbeba9798bdbeba9798bdbeba9798bdbe9798bcbdbebabbb6b7bebaa7a8bd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000baa7a8bdbebaa7a8bdbebaa7a8bdbea7a8bcbdbebabbbcbdbebabbbcbd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
+010100003061508605106050e605036050a6050460502605006050060500605006050060501605026050260502605006050060507605006050160500605006050060500605006050060500605006050060500605
+001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0001000c1105008050100500e050030500a0500405002050000000000000000000000000001000020000200002000000000000007000000000100000000000000000000000000000000000000000000000000000

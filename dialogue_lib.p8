@@ -1,126 +1,23 @@
-pico-8 cartridge // http://www.pico-8.com
-version 42
+-- pico-8 cartridge // http://www.pico-8.com
+-- version 42
 __lua__
-advance_button = 5
 
--- call this before you start using dtb.
--- optional parameter is the number of lines that are displayed. default is 3.
-function dtb_init(numlines)
-    dialogue_pipeline = {}
-    -- Renamed and unified queue
-    dtb_numlines = 3
-    if numlines then
-        dtb_numlines = numlines
-    end
-    _dtb_clean()
-end
+local default_advance_button_id = 5
+local default_num_display_lines = 3
 
--- this will add a piece of text to the queu. the queu is processed automatically.
--- now accepts a speaker parameter which should be an entity with x,y coordinates
-function dtb_disp(txt, speaker, callback)
-    local lines = {}
-    local currline = ""
-    local curword = ""
+dialogue = {
+    sfx_typewriter = 0
+}
 
-    for i = 1, #txt do
-        local char = sub(txt, i, i)
-        curword = curword .. char
+narrator = {
+    name = "narrator",
+    x = 8,
+    y = 10
+}
 
-        -- Process word when space is encountered or word is too long
-        if char == " " or #curword > 15 then
-            -- Add hyphen if word is broken due to length
-            if char != " " and #curword > 15 then
-                curword = curword .. "-"
-            end
-
-            -- Start new line if current won't fit
-            if #curword + #currline > 10 then
-                add(lines, currline)
-                currline = ""
-            end
-
-            -- Add word to line
-            currline = currline .. curword
-            curword = ""
-        end
-    end
-
-    -- Handle any remaining text
-    if #curword > 0 then
-        if #curword + #currline > 10 then
-            add(lines, currline)
-            currline = curword
-        else
-            currline = currline .. curword
-        end
-    end
-
-    if currline != "" then
-        add(lines, currline)
-    end
-
-    -- Determine if narration
-    local is_narration = false
-    if speaker and speaker.name == "narrator" then
-        is_narration = true
-    end
-
-    -- Create unified dialogue entry
-    local entry = {
-        text_lines = lines,
-        speaker_entity = speaker or pl, -- Default to pl if no speaker
-        on_finish_callback = callback or 0,
-        is_narration = is_narration
-    }
-
-    -- Add to the single pipeline
-    add(dialogue_pipeline, entry)
-end
-
--- functions with an underscore prefix are ment for internal use, don't worry about them.
-function _dtb_clean()
-    dtb_dislines = {}
-    for i = 1, dtb_numlines do
-        add(dtb_dislines, "")
-    end
-    dtb_curline = 0
-    dtb_ltime = 0
-end
-
-function _dtb_nextline()
-    dtb_curline += 1
-    for i = 1, #dtb_dislines - 1 do
-        dtb_dislines[i] = dtb_dislines[i + 1]
-    end
-
-    local current_entry = dialogue_pipeline[1]
-    -- Instead of setting to empty string, immediately add the first character
-    if current_entry and dtb_curline <= #current_entry.text_lines then
-        dtb_dislines[#dtb_dislines] = sub(current_entry.text_lines[dtb_curline], 1, 1)
-        dtb_ltime = 1 -- Reset the typing timer
-    else
-        dtb_dislines[#dtb_dislines] = ""
-    end
-    sfx(2)
-end
-
-function _dtb_nexttext()
-    local current_entry = dialogue_pipeline[1]
-    if current_entry and current_entry.on_finish_callback ~= 0 then
-        current_entry.on_finish_callback()
-    end
-    if #dialogue_pipeline > 0 then
-        del(dialogue_pipeline, dialogue_pipeline[1]) -- Remove from the unified pipeline
-    end
-    _dtb_clean()
-    sfx(2)
-end
-
--- draw a speech bubble, ported from dialogue.p8
--- x,y   : anchor pixel coordinate (bottom‑left if !flipped, bottom‑right if flipped)
--- w,h   : width/height in 8×8 tiles
--- flipped?: boolean, default false (true = arrow on the right)
-function _dtb_draw_bubble(x, y, w, h, flipped, narration)
+-- Local helper function for drawing the bubble
+-- (formerly _dtb_draw_bubble, renamed and made local)
+local function _draw_bubble(x, y, w, h, flipped, narration)
     local block_size = 6
     local outline_color = 7
     local fill_color = 1
@@ -234,112 +131,222 @@ function _dtb_draw_bubble(x, y, w, h, flipped, narration)
     return top_y + 4, left_x + 4
 end
 
--- make sure that this function is called each update.
-function dtb_update()
-    if #dialogue_pipeline > 0 then
-        local current_entry = dialogue_pipeline[1] -- Get the current dialogue entry
 
-        if dtb_curline == 0 then
-            dtb_curline = 1
-        end
-        local dislineslength = #dtb_dislines
-        local curlines = current_entry.text_lines -- New way: text comes from the current entry
-        local curlinelength = #dtb_dislines[dislineslength]
+function dialogue:init(num_lines_override, advance_button_override)
+    self.num_display_lines = num_lines_override or default_num_display_lines
+    self.advance_button_id = advance_button_override or default_advance_button_id
+    self.pipeline = {}
+    self:_reset_display_state()
+end
 
-        -- Check if the current line is complete and if it's the last line of the message
-        local complete = false
-        if dtb_curline > 0 and dtb_curline <= #curlines then
-            -- ensure curlines[dtb_curline] is valid
-            complete = curlinelength >= #curlines[dtb_curline]
-        elseif dtb_curline > #curlines then
-            -- handles cases where dtb_curline might have overshot (e.g. empty text)
-            complete = true
-        end
+function dialogue:_reset_display_state()
+    self.display_lines_cache = {}
+    for i = 1, self.num_display_lines do
+        add(self.display_lines_cache, "")
+    end
+    self.current_line_index = 0
+    self.typing_timer = 0
+end
 
-        if complete and dtb_curline >= #curlines then
-            if btnp(advance_button) then
-                _dtb_nexttext()
-                return
+function dialogue:show(txt, speaker, callback)
+    local lines = {}
+    local currline = ""
+    local curword = ""
+
+    for i = 1, #txt do
+        local char = sub(txt, i, i)
+        curword = curword .. char
+
+        if char == " " or #curword > 15 then
+            if char ~= " " and #curword > 15 then
+                curword = curword .. "-"
             end
-        elseif dtb_curline > 0 and dtb_curline <= #curlines then
-            -- Ensure dtb_curline is valid for curlines
-            dtb_ltime -= 1
-            if not complete then
-                if dtb_ltime <= 0 then
-                    local curchari = curlinelength + 1
-                    local curchar = sub(curlines[dtb_curline], curchari, curchari)
-                    dtb_ltime = 1
-                    if curchar ~= " " then
-                        sfx(0)
-                    end
-                    if curchar == "." then
-                        dtb_ltime = 6
-                    end
-                    dtb_dislines[dislineslength] = dtb_dislines[dislineslength] .. curchar
-                end
-                if btnp(advance_button) then
-                    dtb_dislines[dislineslength] = curlines[dtb_curline]
-                end
-            else
-                -- Line is complete, but not the last line of the message
-                _dtb_nextline()
+            if #curword + #currline > 10 then
+                add(lines, currline)
+                currline = ""
             end
+            currline = currline .. curword
+            curword = ""
+        end
+    end
+
+    if #curword > 0 then
+        if #curword + #currline > 10 then
+            add(lines, currline)
+            currline = curword
+        else
+            currline = currline .. curword
+        end
+    end
+
+    if currline ~= "" then
+        add(lines, currline)
+    end
+
+    local is_narration = false
+    if speaker and speaker.name == "narrator" then
+        is_narration = true
+    end
+
+    local entry = {
+        text_lines = lines,
+        speaker_entity = speaker, 
+        on_finish_callback = callback or 0,
+        is_narration = is_narration
+    }
+    add(self.pipeline, entry)
+end
+
+function dialogue:_next_line_in_message()
+    self.current_line_index += 1
+    for i = 1, #self.display_lines_cache - 1 do
+        self.display_lines_cache[i] = self.display_lines_cache[i + 1]
+    end
+
+    local current_entry = self.pipeline[1]
+    if current_entry and self.current_line_index <= #current_entry.text_lines and #current_entry.text_lines[self.current_line_index] > 0 then
+        self.display_lines_cache[#self.display_lines_cache] = sub(current_entry.text_lines[self.current_line_index], 1, 1)
+        self.typing_timer = 1
+    else
+        self.display_lines_cache[#self.display_lines_cache] = ""
+    end
+end
+
+function dialogue:_next_message_in_pipeline()
+    local current_entry = self.pipeline[1]
+    if current_entry and current_entry.on_finish_callback ~= 0 then
+        current_entry.on_finish_callback()
+    end
+    if #self.pipeline > 0 then
+        del(self.pipeline, self.pipeline[1])
+    end
+    self:_reset_display_state()
+end
+
+function dialogue:update()
+    if #self.pipeline == 0 then return end
+
+    local current_entry = self.pipeline[1]
+
+    if self.current_line_index == 0 then 
+        self.current_line_index = 1
+        if current_entry and #current_entry.text_lines > 0 and #current_entry.text_lines[1] > 0 then
+            local first_line_text = current_entry.text_lines[1]
+            local first_char = sub(first_line_text, 1, 1)
+            self.display_lines_cache[#self.display_lines_cache] = first_char
+            self.typing_timer = 1
+            if first_char ~= " " then sfx(0) end
+            if first_char == "." then self.typing_timer = 6 end
+        elseif current_entry and #current_entry.text_lines > 0 then 
+             self:_next_line_in_message()
+        else 
+            self.display_lines_cache[#self.display_lines_cache] = ""
+        end
+    end
+
+    if not current_entry or not current_entry.text_lines or self.current_line_index == 0 or self.current_line_index > #current_entry.text_lines then
+        if btnp(self.advance_button_id) then
+            self:_next_message_in_pipeline()
+        end
+        return
+    end
+    
+    local cache_last_line_idx = #self.display_lines_cache
+    local source_text_lines = current_entry.text_lines 
+    local current_display_line_text = self.display_lines_cache[cache_last_line_idx]
+    local current_source_line_text = source_text_lines[self.current_line_index]
+    local current_display_line_length = #current_display_line_text
+    
+    local is_current_line_fully_typed = current_display_line_length >= #current_source_line_text
+    local is_last_line_of_message = self.current_line_index >= #source_text_lines
+
+    if is_current_line_fully_typed and is_last_line_of_message then
+        if btnp(self.advance_button_id) then
+            self:_next_message_in_pipeline()
+            return
+        end
+    elseif self.current_line_index > 0 and self.current_line_index <= #source_text_lines then 
+        self.typing_timer -= 1
+        if not is_current_line_fully_typed then
+            if self.typing_timer <= 0 then
+                local next_char_index = current_display_line_length + 1
+                local next_char = sub(current_source_line_text, next_char_index, next_char_index)
+                self.typing_timer = 1
+                if next_char ~= " " then
+                    sfx(0)
+                end
+                if next_char == "." then
+                    self.typing_timer = 6
+                end
+                self.display_lines_cache[cache_last_line_idx] = current_display_line_text .. next_char
+            end
+            if btnp(self.advance_button_id) then
+                self.display_lines_cache[cache_last_line_idx] = current_source_line_text
+                self.typing_timer = 0 
+            end
+        else 
+            self:_next_line_in_message()
         end
     end
 end
 
--- make sure to call this function everytime you draw.
-function dtb_draw()
-    if #dialogue_pipeline > 0 then
-        local current_entry = dialogue_pipeline[1] -- Get the current dialogue entry
-        local speaker = current_entry.speaker_entity -- Get speaker from the entry
-        local narration = current_entry.is_narration -- Get narration flag from the entry
-        local dislineslength = #dtb_dislines
+function dialogue:draw()
+    if #self.pipeline == 0 then return end
 
-        -- determine if we need to flip based on screen position
-        local flipped = false
-        local camera_x = peek2(0x5f28) -- get current camera x position
-        local screen_x = speaker.x - camera_x
+    local current_entry = self.pipeline[1]
+    local speaker = current_entry.speaker_entity 
+    local is_narration_flag = current_entry.is_narration
+    
+    local dislineslength = #self.display_lines_cache
+    local flipped = false
+    local bubble_render_x, bubble_render_y
 
-        -- flip if too close to the right edge
-        if screen_x > 90 then
-            flipped = true
+    if not speaker then
+      if is_narration_flag then
+        -- Narration without a specific speaker entity (e.g. centered on screen)
+        -- _draw_bubble handles camera offset for narration based on its 'narration' param
+        bubble_render_x = 0 -- Placeholder, _draw_bubble logic for narration takes over
+        bubble_render_y = 0 -- Placeholder
+      else 
+        -- Character dialogue MUST have a speaker
+        return 
+      end
+    else
+      bubble_render_x = speaker.x 
+      bubble_render_y = speaker.y 
+      if not is_narration_flag then
+          local camera_x = peek2(0x5f28)
+          local screen_x = speaker.x - camera_x
+          if screen_x > 75 then
+              flipped = true
+          end
+      end
+    end
+
+    local used_lines = 0
+    for i = 1, dislineslength do
+        if self.display_lines_cache[i] != "" then
+            used_lines += 1
         end
+    end
 
-        -- calculate height based on actually used lines
-        local used_lines = 0
-        for i = 1, dislineslength do
-            if dtb_dislines[i] != "" then
-                used_lines += 1
-            end
-        end
+    local bubble_height = used_lines or 1 
+    local bubble_width = 8 
+    local line_height = 6
+    local narration_offset = 0
+    if is_narration_flag then
+        narration_offset = used_lines * line_height
+    end
+    
+    local final_bubble_y = bubble_render_y + narration_offset
+    
+    local text_y, text_x = _draw_bubble(bubble_render_x, final_bubble_y, bubble_width, bubble_height, flipped, is_narration_flag)
 
-        -- bubble height exactly matches the content
-        local bubble_height = used_lines or 1
-
-        -- fixed width
-        local bubble_width = 8
-
-        local line_height = 6
-        local narration_offset = 0 -- Initialize narration_offset
-
-        -- The 'narration' variable is now directly from current_entry.is_narration
-        -- The logic to set narration_offset based on speaker.name == "narrator" is now implicitly handled
-        -- by current_entry.is_narration, but the offset calculation itself still needs to happen.
-        if narration then
-            narration_offset = used_lines * line_height
-        end
-
-        -- draw the bubble
-        local text_y, text_x = _dtb_draw_bubble(speaker.x, speaker.y + narration_offset, bubble_width, bubble_height, flipped, narration)
-
-        -- draw the text
-        local line_number = 0
-        for i = 1, dislineslength do
-            if dtb_dislines[i] != "" then
-                line_number += 1
-                print(dtb_dislines[i], text_x, text_y + ((line_number - 1) * line_height), 7)
-            end
+    local line_number = 0
+    for i = 1, dislineslength do
+        if self.display_lines_cache[i] != "" then
+            line_number += 1
+            print(self.display_lines_cache[i], text_x, text_y + ((line_number - 1) * line_height), 7)
         end
     end
 end
