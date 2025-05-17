@@ -186,14 +186,10 @@ function _dtb_draw_bubble(x, y, w, h, flipped)
     -----------------------------------------------------------------------
     --  centre fill
     -----------------------------------------------------------------------
-    for i = 1, w - 2 do
-        for j = 1, h - 2 do
-            rectfill(
-                left_x + i * block_size, top_y + j * block_size,
-                left_x + i * block_size + block_size, top_y + j * block_size + block_size, fill_color
-            )
-        end
-    end
+    rectfill(
+        left_x + block_size, top_y + block_size,
+        left_x + block_size * (w - 1), top_y + block_size * (h - 1), fill_color
+    )
 
     -----------------------------------------------------------------------
     --  arrow
@@ -276,7 +272,7 @@ function dtb_draw()
         end
 
         -- bubble height exactly matches the content
-        local bubble_height = max(2, used_lines)
+        local bubble_height = used_lines or 1
 
         -- fixed width
         local bubble_width = 8
