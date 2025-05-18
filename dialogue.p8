@@ -425,6 +425,10 @@ function dialogue:draw()
     if #self.pipeline == 0 then return end
     -- No dialogue to draw.
 
+    if self.current_line_index == 0 then
+        return
+    end
+
     local current_entry = self.pipeline[1]
     -- Ensure there is a speaker entity for character dialogue.
     if not current_entry or not current_entry.speaker_entity then

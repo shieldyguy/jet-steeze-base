@@ -37,20 +37,29 @@ knife = {
     y = 64,
     w = 4,
     h = 4,
-    done = false
+    done = false,
+    start_time = 0,
+    knife_sprite = 14,
+    block_sprite = 30,
+    apple_sprite = 13,
+    chopped_apple_sprite = 46,
+    chop_state = "up",
+    chop_time = 0,
+    flash_count = 0
 }
 
 function chop_setup()
-    dialogue:show("before we speak... ", narrator)
+    knife.start_time = t()
     dialogue:show(
-        "i must chop! (z)", knife, function()
+        "when in doubt...       \n...chop!", narrator, function()
             knife.done = true
+            knife.chop_state = "down"
+            knife.chop_time = t()
         end
     )
 end
 
 function chop_update()
-    chop_move()
     update_camera()
     dialogue:update()
     if knife.done then
@@ -61,8 +70,58 @@ function chop_update()
 end
 
 function chop_draw()
-    cls(12)
-    spr(14, knife.x, knife.y, 4, 4)
+    camera()
+    cls(0)
+    if knife.flash_count < 5 and knife.chop_state == "down" then
+        cls(7)
+        knife.flash_count += 1
+        return
+    end
+    if (knife.chop_state == "up") then
+        -- knife
+        if fade(knife.start_time, 4) then
+            sx, sy = (knife.knife_sprite % 16) * 8, (knife.knife_sprite \ 16) * 8
+            sspr(sx, sy, 16, 8, knife.x - 16, knife.y - 20, 32, 16)
+        end
+        -- choppin' block
+        sx, sy = (knife.block_sprite % 16) * 8, (knife.block_sprite \ 16) * 8
+        sspr(sx, sy, 16, 8, knife.x - 16, knife.y, 32, 16)
+
+        sx, sy = (knife.apple_sprite % 16) * 8, (knife.apple_sprite \ 16) * 8
+        sspr(sx, sy, 8, 8, knife.x - 4, knife.y - 4, 16, 16)
+    else
+        -- Time since chop
+        local dt = t() - knife.chop_time
+        local spread = min(dt * 10, 20) -- how far pieces spread
+        -- choppin' block
+        sx, sy = (knife.block_sprite % 16) * 8, (knife.block_sprite \ 16) * 8
+        sspr(sx, sy, 16, 8, knife.x - 16, knife.y, 32, 16)
+
+        if not fade(knife.chop_time, 4) then
+            sx, sy = ((knife.chopped_apple_sprite + 1) % 16) * 8, ((knife.chopped_apple_sprite + 1) \ 16) * 8
+            sspr(sx, sy, 8, 8, knife.x + spread, knife.y - 2, 16, 16)
+        end
+
+        -- knife
+        sx, sy = (knife.knife_sprite % 16) * 8, (knife.knife_sprite \ 16) * 8
+        sspr(sx, sy, 16, 8, knife.x - 16, knife.y - 1, 32, 16)
+
+        if not fade(knife.chop_time, 4) then
+            sx, sy = (knife.chopped_apple_sprite % 16) * 8, (knife.chopped_apple_sprite \ 16) * 8
+            sspr(sx, sy, 8, 8, knife.x - 16 - spread, knife.y, 16, 16)
+        end
+    end
+
+    if (t() - knife.chop_time > 4) and (knife.chop_state == "down") then
+        print("~", knife.x + 30, knife.y + 5)
+        print("~", knife.x - 30, knife.y + 5)
+    end
+
+    if (t() - knife.chop_time > 8) and (knife.chop_state == "down") then
+        switch_scene("main")
+    end
+
+    -- dialogue
     dialogue:draw()
 end
 
@@ -81,7 +140,8 @@ end
 -- title scene
 
 function title_setup()
-    dialogue:show("anything you dream of it..", narrator)
+    --dialogue:show("is this... a dream?", narrator)
+    dialogue:show("press x to start", narrator)
 end
 
 function title_update()
@@ -93,14 +153,20 @@ function title_update()
 end
 
 function title_draw()
-    cls(12)
+    camera()
+    cls(0)
     dialogue:draw()
 end
 
 -- main scene
 
+function main_setup()
+    -- start jetski sound
+    sfx(steve.jetski_sfx_id)
+    sfx(steve.jetski_sfx_id + 2)
+end
+
 function main_update()
-    frame_count += 1
     move_player(steve)
     trigger_splashes()
     get_terrain_collision()
@@ -126,5 +192,23 @@ end
 
 -- Register states
 add_scene("title", title_update, title_draw, title_setup)
-add_scene("main", main_update, main_draw)
+add_scene("main", main_update, main_draw, main_setup)
 add_scene("chop", chop_update, chop_draw, chop_setup)
+
+-- helpers
+-- returns true if sprite should be drawn this frame
+function fade(start_time, duration)
+    local elapsed = t() - start_time
+    if elapsed >= duration then return true end
+
+    -- fade progression (0 to 1)
+    local progress = elapsed / duration
+
+    -- slows down early flicker
+    local eased = progress ^ 2
+
+    -- pulse-width modulation: wider duty cycle = more visible
+    local pulse = flr(eased * 10)
+    -- control steps
+    return (frame_count % 7) < pulse
+end
