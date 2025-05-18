@@ -436,6 +436,12 @@ function dialogue:draw()
 
     local speaker = current_entry.speaker_entity
     local is_narration_flag = current_entry.is_narration
+    local bubble_y_offset = 0
+
+    local camera_x = peek2(0x5f28)
+    local camera_y = peek2(0x5f2a)
+    local screen_x = speaker.x - camera_x
+    local screen_y = speaker.y - camera_y
 
     -- Determine bubble style and dimensions based on narration status and pre-calculated width.
     local current_bubble_style = is_narration_flag and self.style.narrator_bubble or self.style.character_bubble
@@ -444,25 +450,6 @@ function dialogue:draw()
     local current_max_display_lines = current_bubble_style.max_lines
 
     local display_cache_actual_lines = #self.display_lines_cache
-    local flipped = false
-    -- For character bubble arrow direction.
-    local bubble_render_x, bubble_render_y
-
-    -- Determine base render position for the bubble.
-    if is_narration_flag then
-        -- Narration uses speaker object's x/y, but _draw_bubble applies camera offset.
-        bubble_render_x = speaker and speaker.x or 0 -- Fallback if narrator object somehow nil
-        bubble_render_y = speaker and speaker.y or 0
-    else
-        bubble_render_x = speaker.x
-        bubble_render_y = speaker.y
-        -- Check if character bubble needs to be flipped.
-        local camera_x = peek2(0x5f28)
-        local screen_x = speaker.x - camera_x
-        if screen_x > self.style.flip_threshold_screen_x then
-            flipped = true
-        end
-    end
 
     -- Calculate number of lines currently used in the display cache.
     local used_lines = 0
@@ -483,7 +470,40 @@ function dialogue:draw()
         narration_offset = used_lines * line_h_pixels -- Example offset, adjust as needed in style or logic.
     end
 
-    local final_bubble_y = bubble_render_y + narration_offset
+    local flipped = false
+    -- For character bubble arrow direction.
+    local bubble_render_x, bubble_render_y
+
+    -- Determine base render position for the bubble.
+    if is_narration_flag then
+        -- Narration uses speaker object's x/y, but _draw_bubble applies camera offset.
+        bubble_render_x = speaker and speaker.x or 0 -- Fallback if narrator object somehow nil
+        bubble_render_y = speaker and speaker.y or 0
+    else
+        bubble_render_x = speaker.x
+        bubble_render_y = speaker.y
+        -- Check if character bubble needs to be flipped.
+        if screen_x > self.style.flip_threshold_screen_x then
+            flipped = true
+        end
+
+        -- Keep bubble in screen
+        if screen_x < 0 then
+            bubble_render_x = camera_x
+        elseif screen_x > 128 then
+            bubble_render_x = camera_x + 128
+        end
+
+        local bubble_y_screen_threshold = used_lines * line_h_pixels + 10
+
+        if screen_y < bubble_y_screen_threshold then
+            bubble_render_y = camera_y + bubble_y_screen_threshold
+        elseif screen_y > 125 then
+            bubble_render_y = camera_y + 125
+        end
+    end
+
+    local final_bubble_y = bubble_render_y + narration_offset + bubble_y_offset
 
     -- Draw the bubble background.
     local text_y, text_x = self:_draw_bubble(bubble_render_x, final_bubble_y, bubble_w_tiles, bubble_h_tiles, flipped, is_narration_flag)

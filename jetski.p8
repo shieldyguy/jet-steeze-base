@@ -41,9 +41,9 @@ dir_map = {
 entities = {
     {
         name = "red_dot",
-        x = 100,
+        x = 200,
         y = 100,
-        base_y = 100,
+        base_y = 350,
         w = 32,
         h = 32,
         sprite = 44,
@@ -116,9 +116,9 @@ function _init()
     }
 
     player_max_x = 304
-    player_max_y = 165
+    player_max_y = 600
     camera_max_x = 184
-    camera_max_y = 36
+    camera_max_y = 600
 
     -- initialize dialogue system
     dialogue:init()
