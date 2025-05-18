@@ -197,6 +197,7 @@ end
 --   speaker: table - The entity speaking (must have .x, .y, and .name properties).
 --                    If speaker.name == "narrator", it's treated as narration.
 --   callback: (optional) function - A function to call when this dialogue message concludes.
+--   voice: (optional) table - A table containing two SFX IDs for the voice of the speaker.
 function dialogue:show(txt, speaker, callback, voice)
     local lines = {}
     -- Stores the processed, wrapped lines of text.

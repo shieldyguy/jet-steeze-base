@@ -70,7 +70,8 @@ function BaseEntity:event(player_obj)
     -- Specific entities will almost always override this for unique interactions.
     self.triggered = true
     if debug then
-        print("default event for: " .. self.name .. " triggered by: " .. player_obj.name)
+        --print("default event for: " .. self.name .. " triggered by: " .. player_obj.name)
+        dialogue:show("bingus", narrator)
     end
 end
 
