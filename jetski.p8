@@ -64,7 +64,6 @@ entities = {
                     self.triggered = false
                 end, steve.voice
             )
-            switch_scene("chop")
         end,
         draw = function(self)
             spr(self.sprite, self.x - 8, self.y - 8, 2, 2, false, false)
@@ -129,11 +128,6 @@ function _init()
     -- start jetski sound
     sfx(steve.jetski_sfx_id)
     sfx(steve.jetski_sfx_id + 2)
-
-    -- Register states
-    add_scene("title", title_update, title_draw)
-    add_scene("main", main_update, main_draw)
-    add_scene("chop", chop_update, chop_draw)
 
     -- Initialize game state
     switch_scene("title")

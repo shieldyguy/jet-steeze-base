@@ -32,26 +32,69 @@ end
 
 -- chop scene
 
+knife = {
+    x = 64,
+    y = 64,
+    w = 4,
+    h = 4,
+    done = false
+}
+
+function chop_setup()
+    dialogue:show("before we speak... ", narrator)
+    dialogue:show(
+        "i must chop! (z)", knife, function()
+            knife.done = true
+        end
+    )
+end
+
 function chop_update()
-    if btnp(5) then
-        switch_scene("main")
+    chop_move()
+    update_camera()
+    dialogue:update()
+    if knife.done then
+        if btnp(4) then
+            switch_scene("main")
+        end
     end
 end
 
 function chop_draw()
-    camera()
-    clip()
-    cls()
-    spr(14, 64, 64, 2, 2)
-    print("chop! (x)", 5, 5, 7)
+    cls(12)
+    spr(14, knife.x, knife.y, 4, 4)
+    dialogue:draw()
+end
+
+function chop_move()
+    if btnp(0) then
+        knife.x -= 1
+    elseif btnp(1) then
+        knife.x += 1
+    elseif btnp(2) then
+        knife.y -= 1
+    elseif btnp(3) then
+        knife.y += 1
+    end
 end
 
 -- title scene
 
+function title_setup()
+    dialogue:show("anything you dream of it..", narrator)
+end
+
 function title_update()
+    update_camera()
+    dialogue:update()
     if btnp(5) then
-        switch_scene("main")
+        switch_scene("chop")
     end
+end
+
+function title_draw()
+    cls(12)
+    dialogue:draw()
 end
 
 -- main scene
@@ -67,11 +110,6 @@ function main_update()
     dialogue:update()
 end
 
-function title_draw()
-    cls()
-    print("anything you dream of it", 5, 5, 7)
-end
-
 function main_draw()
     cls(12)
 
@@ -83,12 +121,10 @@ function main_draw()
     draw_particles()
     draw_entities()
     draw_player()
-
     dialogue:draw()
 end
 
-function chop_draw()
-    cls()
-    spr(14, 64, 64, 2, 2)
-    print("chop! (x)", 5, 5, 7)
-end
+-- Register states
+add_scene("title", title_update, title_draw, title_setup)
+add_scene("main", main_update, main_draw)
+add_scene("chop", chop_update, chop_draw, chop_setup)
