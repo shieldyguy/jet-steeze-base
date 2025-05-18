@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-#include dialogue_lib.p8
+#include dialogue.p8
 #include entities.p8
 
 debug = true
