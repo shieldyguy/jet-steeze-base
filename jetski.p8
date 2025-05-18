@@ -5,7 +5,7 @@ __lua__
 #include entities.p8
 
 debug = true
-pl = {
+steve = {
     x = 64,
     y = 64,
     dx = 0,
@@ -15,7 +15,8 @@ pl = {
     g = 0.5, -- gravity
     jump_power = 6, -- initial jump velocity
     spd = 0.08, -- same speed as basics.p8
-    dir = 0
+    dir = 0,
+    jetski_sfx_id = 8
 }
 
 narrator = {
@@ -46,14 +47,14 @@ entities = {
         triggered = false,
         event = function(self)
             self.triggered = true
-            dialogue:show("woah whachaoutna, red dot!", pl, nil, { 0, 1 })
+            dialogue:show("woah whachaoutna, red dot!", steve, nil, { 0, 1 })
             dialogue:show(
                 "wudup, steve!", self, function()
                     self.triggered = false
                     dialogue:show("red dot thought deeply to himself about the nature of his floaty biz. 'nbd', he concluded. 'i am a floaty dot.'", narrator)
                     dialogue:show("yo steve, i'm a floaty dot!", self, nil, { 2, 3 })
-                    dialogue:show("f'kn sick!", pl)
-                    dialogue:show("i mean, i noticed but yeah yknow, sick.", pl)
+                    dialogue:show("f'kn sick!", steve)
+                    dialogue:show("i mean, i noticed but yeah yknow, sick.", steve)
                 end, { 2, 3 }
             )
         end,
@@ -64,7 +65,7 @@ entities = {
             self.y += sin(t()) * 0.5
         end,
         check_player_collision = function(self)
-            if (point_rect_collision(pl, self) and not self.triggered) then
+            if (point_rect_collision(steve, self) and not self.triggered) then
                 self:event()
             end
         end
@@ -89,7 +90,7 @@ function _init()
     cam_y = 0
     track_spd = 0.1
     -- smooth camera tracking speed
-    ctrack = pl
+    ctrack = steve
 
     terrain = {
         forest = {
@@ -117,20 +118,18 @@ function _init()
     -- initialize dialogue system
     dialogue:init()
 
+    -- start jetski sound
+    -- sfx(steve.jetski_sfx_id)
+
     -- add some test dialogue (can be removed in production)
-    --dtb_disp("hallo! \n i'm steve.", pl)
-    --dtb_disp("one line", pl)
-    dialogue:show("welcome!", narrator)
-    dialogue:show("t", narrator)
-    dialogue:show("te", narrator)
-    dialogue:show("test", narrator)
-    dialogue:show("testing!", narrator)
+    --dtb_disp("hallo! \n i'm steve.", steve)
+    --dtb_disp("one line", steve)
 end
 
 function _update()
     frame_count += 1
 
-    move_player(pl)
+    move_player(steve)
     trigger_splashes()
     get_terrain_collision()
     handle_entity_collisions()
@@ -157,17 +156,17 @@ function _draw()
     dialogue:draw()
     --draw_dialogue()
 
-    --draw_bubble(pl.x, pl.y, 5, 3, flip_dialogue)
-    --print("sCARNON", pl.x - 45, pl.y - 18, 7)
-    --print("CAHNTS?", pl.x - 45, pl.y - 12, 7)
-    --print(cam_x, pl.x+16, pl.y-10, 7)
-    --print(cam_y, pl.x+16, pl.y-4, 7)
-    --print(pl.x, pl.x+16, pl.y+2, 7)
-    --print(pl.y, pl.x+16, pl.y+8, 7)
-    --print(stat(1), pl.x + 16, pl.y + 8, 7)
-    --print(map_collision(pl, 0), pl.x + 16, pl.y + 8, 7)
-    --print(map_collision(pl, 1), pl.x + 16, pl.y + 15, 7)
-    --print(terrain.forest.collision, pl.x + 16, pl.y + 15, 7)
+    --draw_bubble(steve.x, steve.y, 5, 3, flip_dialogue)
+    --print("sCARNON", steve.x - 45, steve.y - 18, 7)
+    --print("CAHNTS?", steve.x - 45, steve.y - 12, 7)
+    --print(cam_x, steve.x+16, steve.y-10, 7)
+    --print(cam_y, steve.x+16, steve.y-4, 7)
+    --print(steve.x, steve.x+16, steve.y+2, 7)
+    --print(steve.y, steve.x+16, steve.y+8, 7)
+    --print(stat(1), steve.x + 16, steve.y + 8, 7)
+    --print(map_collision(steve, 0), steve.x + 16, steve.y + 8, 7)
+    --print(map_collision(steve, 1), steve.x + 16, steve.y + 15, 7)
+    --print(terrain.forest.collision, steve.x + 16, steve.y + 15, 7)
 end
 
 function update_camera()
@@ -205,38 +204,42 @@ function trigger_splashes()
         col = terrain.beach.particle_color
     end
 
-    local speed = (max(abs(pl.dx), abs(pl.dy)) * 0.3)
+    local speed = (steve.dx * steve.dx + steve.dy * steve.dy) * 0.1
+
     local splash_threshold = 0.05
-    if (pl.z == 0) then
-        if (pl.dir == dir_map.n or pl.dir == dir_map.s) then
+    if (steve.z == 0) then
+        if (steve.dir == dir_map.n or steve.dir == dir_map.s) then
             if (speed > splash_threshold) then
-                make_splash(pl.x, pl.y + 2, -speed, pl.dy, speed, col)
-                make_splash(pl.x, pl.y + 6, -speed, pl.dy, speed, col)
-                make_splash(pl.x + 8, pl.y + 2, speed, pl.dy, speed, col)
-                make_splash(pl.x + 8, pl.y + 6, speed, pl.dy, speed, col)
+                make_splash(steve.x, steve.y + 2, -speed, steve.dy, speed, col)
+                make_splash(steve.x, steve.y + 6, -speed, steve.dy, speed, col)
+                make_splash(steve.x + 8, steve.y + 2, speed, steve.dy, speed, col)
+                make_splash(steve.x + 8, steve.y + 6, speed, steve.dy, speed, col)
             end
-        elseif (pl.dir == dir_map.e or pl.dir == dir_map.w) then
+        elseif (steve.dir == dir_map.e or steve.dir == dir_map.w) then
             if (speed > splash_threshold) then
-                make_splash(pl.x + 2, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
-                make_splash(pl.x + 4, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
-                make_splash(pl.x + 6, pl.y + 7, pl.dx * 0.5, 0.3, speed, col)
+                make_splash(steve.x + 2, steve.y + 7, steve.dx * 0.5, 0.3, speed, col)
+                make_splash(steve.x + 4, steve.y + 7, steve.dx * 0.5, 0.3, speed, col)
+                make_splash(steve.x + 6, steve.y + 7, steve.dx * 0.5, 0.3, speed, col)
             end
-        elseif (pl.dir == dir_map.ne or pl.dir == dir_map.sw) then
+        elseif (steve.dir == dir_map.ne or steve.dir == dir_map.sw) then
             if (speed > splash_threshold) then
-                make_splash(pl.x + 2, pl.y + 6, -speed, 0.3, speed, col)
-                make_splash(pl.x + 6, pl.y + 2, -speed, 0.3, speed, col)
-                make_splash(pl.x + 4, pl.y + 8, speed, 0.3, speed, col)
-                make_splash(pl.x + 8, pl.y + 4, speed, 0.3, speed, col)
+                make_splash(steve.x + 2, steve.y + 6, -speed, 0.3, speed, col)
+                make_splash(steve.x + 6, steve.y + 2, -speed, 0.3, speed, col)
+                make_splash(steve.x + 4, steve.y + 8, speed, 0.3, speed, col)
+                make_splash(steve.x + 8, steve.y + 4, speed, 0.3, speed, col)
             end
-        elseif (pl.dir == dir_map.nw or pl.dir == dir_map.se) then
+        elseif (steve.dir == dir_map.nw or steve.dir == dir_map.se) then
             if (speed > splash_threshold) then
-                make_splash(pl.x + 1, pl.y + 4, -speed, 0.3, speed, col)
-                make_splash(pl.x + 5, pl.y + 8, -speed, 0.3, speed, col)
-                make_splash(pl.x + 4, pl.y + 2, speed, 0.3, speed, col)
-                make_splash(pl.x + 8, pl.y + 6, speed, 0.3, speed, col)
+                make_splash(steve.x + 1, steve.y + 4, -speed, 0.3, speed, col)
+                make_splash(steve.x + 5, steve.y + 8, -speed, 0.3, speed, col)
+                make_splash(steve.x + 4, steve.y + 2, speed, 0.3, speed, col)
+                make_splash(steve.x + 8, steve.y + 6, speed, 0.3, speed, col)
             end
         end
     end
+
+    -- update jetski sound
+    --set_sfx_loop(steve.jetski_sfx_id, 0, max(2, 18 - (speed * 16)))
 end
 
 -->8
@@ -280,12 +283,12 @@ end
 --player
 
 function draw_player_shadow()
-    spr(sprite_index + 32, pl.x - 5 - (pl.z / 4), pl.y - 3, 2, 2, flip_x)
+    spr(sprite_index + 32, steve.x - 5 - (steve.z / 4), steve.y - 3, 2, 2, flip_x)
 end
 
 function draw_player()
     -- draw player at height z
-    spr(sprite_index, pl.x - 4, pl.y - 4 - pl.z, 2, 2, flip_x)
+    spr(sprite_index, steve.x - 4, steve.y - 4 - steve.z, 2, 2, flip_x)
 end
 
 function map_collision(obj, flag)
@@ -295,7 +298,7 @@ end
 
 function get_terrain_collision()
     for name, t in pairs(terrain) do
-        if map_collision(pl, t.flag) then
+        if map_collision(steve, t.flag) then
             t.collision = true
         else
             t.collision = false
@@ -344,12 +347,18 @@ function get_direction(up, down, left, right)
         return -- no input
     end
 
-    pl.dir = dir_map[dir_key]
-    sprite_index = abs(pl.dir)
-    flip_x = pl.dir < 0
-    if (pl.dir == -1) then
+    steve.dir = dir_map[dir_key]
+    sprite_index = abs(steve.dir)
+    flip_x = steve.dir < 0
+    if (steve.dir == -1) then
         sprite_index = 0
     end
+end
+
+function set_sfx_loop(sfx_id, loop_start, loop_end)
+    local base = 0x3200 + sfx_id * 68
+    poke(base + 66, loop_start)
+    poke(base + 67, loop_end)
 end
 
 function move_player(p)
@@ -582,7 +591,7 @@ bdbebabba7a8bebaa7a8aeafbaa7a8bdbeb6b7a8bda7a8a7a8a7a8ba9798bd000000000000000000
 bdbeba9798bdbeba9798bdbeba9798bdbe9798bcbdbebabbb6b7bebaa7a8bd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000baa7a8bdbebaa7a8bdbebaa7a8bdbea7a8bcbdbebabbbcbdbebabbbcbd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-010600001a0511d0011d0011d0011f0011f0011f0011f0011f0011f0011f0011f0010000101001020010200102001000010000107001000010100100001000010000100001000010000100001000010000100001
+010600001a0001d0001d0011d0011f0011f0011f0011f0011f0011f0011f0011f0010000101001020010200102001000010000107001000010100100001000010000100001000010000100001000010000100001
 010400001805114051000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001
 010300003a05023000160001d0011f001240012a00100001000010000101001020010200102001000010000107001000010100100001000010000100001000010000100001000010000100001000010000100001
 010900003705523005160051d0051f005240052a00500005000050000501005020050200502005000050000507005000050100500005000050000500005000050000500005000050000500005000050000500005
@@ -590,4 +599,4 @@ __sfx__
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0001000c1105008050100500e050030500a0500405002050000000000000000000000000001000020000200002000000000000007000000000100000000000000000000000000000000000000000000000000000
+0001000c1562008020100300e040030300a0200402002020000000000000000000000000001000020000200002000000000000007000000000100000000000000000000000000000000000000000000000000000

@@ -341,7 +341,7 @@ function dialogue:update()
             local first_char = sub(first_line_text, 1, 1)
             self.display_lines_cache[#self.display_lines_cache] = first_char -- Display first character.
             self.typing_timer = 1
-            if first_char ~= " " then sfx(rnd({ current_entry.voice[1], current_entry.voice[2] }), 0) end
+            if first_char ~= " " then sfx(rnd({ current_entry.voice[1], current_entry.voice[2] })) end
             if first_char == "." then self.typing_timer = self.style.period_typing_delay_frames end
         elseif current_entry and #current_entry.text_lines > 0 then
             -- First line is empty, but other lines exist; try to advance to the next line.
@@ -391,7 +391,7 @@ function dialogue:update()
                     self.style.sfx_typewriter_skip_count += 1
                     if self.style.sfx_typewriter_skip_count >= self.style.sfx_typewriter_skip then
                         self.style.sfx_typewriter_skip_count = 0
-                        sfx(rnd({ current_entry.voice[1], current_entry.voice[2] }), 0)
+                        sfx(rnd({ current_entry.voice[1], current_entry.voice[2] }))
                     end
                 end
                 if next_char == "." then
