@@ -6,6 +6,60 @@ dialogue = {}
 -- Default ID for the button used to advance dialogue.
 local default_advance_button_id = 5
 
+-- Method: init
+-- Purpose: Initializes the dialogue system, setting up default styles and state.
+-- Parameters:
+--   custom_advance_button_id: (optional) number - Overrides the default advance button ID.
+function dialogue:init(custom_advance_button_id)
+    self.advance_button_id = custom_advance_button_id or default_advance_button_id
+
+    -- Style configuration for the dialogue system.
+    self.style = {
+        text_color = 7, -- Default color for dialogue text.
+        text_line_height_pixels = 6, -- Pixel height of a single line of text.
+
+        sfx_typewriter_0 = 0, -- SFX ID for the character 1st typing sound.
+        sfx_typewriter_1 = 1, -- SFX ID for the character 2nd typing sound.
+        sfx_typewriter_2 = 2, -- SFX ID for the character 3rd typing sound.
+        sfx_typewriter_skip = 4, -- how often to play the typewriter sfx.
+        sfx_typewriter_skip_count = 0, -- keep track of how often we're palying the typewrite sfx.
+        sfx_next_line = 0, -- SFX ID when advancing to a new line within the same message.
+        sfx_next_message = 0, -- SFX ID when advancing to a new dialogue message.
+        period_typing_delay_frames = 6, -- Extra delay (in frames) after typing a period.
+
+        bubble_padding_pixels_x = 4, -- Horizontal padding (each side) inside the bubble before text.
+
+        bubble_block_size = 6, -- Size (width/height) of the basic building block for bubbles in pixels.
+        bubble_outline_color = 7, -- Color for the bubble's outline.
+        bubble_fill_color = 1, -- Color for the bubble's fill.
+        bubble_x_offset_char = 15, -- Horizontal offset from speaker for character speech bubbles.
+        corner_sprite_id = 10, -- Sprite ID for bubble corners.
+        arrow_sprite_id = 12, -- Sprite ID for the bubble's speech arrow.
+        flip_threshold_screen_x = 75, -- Screen X-coordinate beyond which character bubbles flip direction.
+
+        character_bubble = {
+            min_width_tiles = 2, -- Minimum width of a character bubble in tiles.
+            max_width_tiles = 8, -- Maximum width of a character bubble in tiles.
+            max_lines = 4, -- Maximum number of lines displayed in a character bubble.
+            line_wrap_chars = 10, -- Character count at which to wrap lines for character speech.
+            hyphenate_word_len = 8 -- Minimum word length to consider for hyphenation in character speech.
+        },
+
+        narrator_bubble = {
+            min_width_tiles = 2, -- Minimum width of a narrator bubble in tiles.
+            max_width_tiles = 13, -- Maximum width of a narrator bubble in tiles.
+            max_lines = 4, -- Maximum number of lines displayed in a narrator bubble.
+            line_wrap_chars = 18, -- Character count at which to wrap lines for narration.
+            hyphenate_word_len = 16 -- Minimum word length to consider for hyphenation in narration.
+        }
+    }
+
+    self.pipeline = {}
+    -- Queue for dialogue entries.
+    self:_reset_display_state()
+    -- Initialize display-related state variables.
+end
+
 -- Method: _draw_bubble
 -- Purpose: Internal helper to draw the speech bubble background, corners, and arrow.
 -- Parameters:
@@ -27,6 +81,10 @@ function dialogue:_draw_bubble(x, y, w_tiles, h_tiles, flipped, narration)
     local arrow_spr = self.style.arrow_sprite_id
 
     flipped = flipped or false
+
+    -- swap colors, this can get hairy!
+    pal(1, self.style.bubble_fill_color)
+    pal(7, self.style.bubble_outline_color)
 
     -- Adjust bubble position based on whether it's narration or character speech.
     if narration then
@@ -113,62 +171,11 @@ function dialogue:_draw_bubble(x, y, w_tiles, h_tiles, flipped, narration)
         spr(corner_spr, left_x, y - 1, 1, 1, false, true) -- Bottom-left
     end
 
+    -- restore default palette
+    pal()
+
     -- Return the coordinates for where the text should start printing.
     return top_y + 4, left_x + 4
-end
-
--- Method: init
--- Purpose: Initializes the dialogue system, setting up default styles and state.
--- Parameters:
---   custom_advance_button_id: (optional) number - Overrides the default advance button ID.
-function dialogue:init(custom_advance_button_id)
-    self.advance_button_id = custom_advance_button_id or default_advance_button_id
-
-    -- Style configuration for the dialogue system.
-    self.style = {
-        text_color = 7, -- Default color for dialogue text.
-        text_line_height_pixels = 6, -- Pixel height of a single line of text.
-
-        sfx_typewriter_0 = 0, -- SFX ID for the character 1st typing sound.
-        sfx_typewriter_1 = 1, -- SFX ID for the character 2nd typing sound.
-        sfx_typewriter_2 = 2, -- SFX ID for the character 3rd typing sound.
-        sfx_typewriter_skip = 4, -- how often to play the typewriter sfx.
-        sfx_typewriter_skip_count = 0, -- keep track of how often we're palying the typewrite sfx.
-        sfx_next_line = 0, -- SFX ID when advancing to a new line within the same message.
-        sfx_next_message = 0, -- SFX ID when advancing to a new dialogue message.
-        period_typing_delay_frames = 6, -- Extra delay (in frames) after typing a period.
-
-        bubble_padding_pixels_x = 4, -- Horizontal padding (each side) inside the bubble before text.
-
-        bubble_block_size = 6, -- Size (width/height) of the basic building block for bubbles in pixels.
-        bubble_outline_color = 7, -- Color for the bubble's outline.
-        bubble_fill_color = 1, -- Color for the bubble's fill.
-        bubble_x_offset_char = 15, -- Horizontal offset from speaker for character speech bubbles.
-        corner_sprite_id = 10, -- Sprite ID for bubble corners.
-        arrow_sprite_id = 12, -- Sprite ID for the bubble's speech arrow.
-        flip_threshold_screen_x = 75, -- Screen X-coordinate beyond which character bubbles flip direction.
-
-        character_bubble = {
-            min_width_tiles = 2, -- Minimum width of a character bubble in tiles.
-            max_width_tiles = 8, -- Maximum width of a character bubble in tiles.
-            max_lines = 4, -- Maximum number of lines displayed in a character bubble.
-            line_wrap_chars = 10, -- Character count at which to wrap lines for character speech.
-            hyphenate_word_len = 8 -- Minimum word length to consider for hyphenation in character speech.
-        },
-
-        narrator_bubble = {
-            min_width_tiles = 2, -- Minimum width of a narrator bubble in tiles.
-            max_width_tiles = 13, -- Maximum width of a narrator bubble in tiles.
-            max_lines = 4, -- Maximum number of lines displayed in a narrator bubble.
-            line_wrap_chars = 18, -- Character count at which to wrap lines for narration.
-            hyphenate_word_len = 16 -- Minimum word length to consider for hyphenation in narration.
-        }
-    }
-
-    self.pipeline = {}
-    -- Queue for dialogue entries.
-    self:_reset_display_state()
-    -- Initialize display-related state variables.
 end
 
 -- Method: _reset_display_state
