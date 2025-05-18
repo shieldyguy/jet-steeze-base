@@ -129,9 +129,13 @@ function dialogue:init(custom_advance_button_id)
         text_color = 7, -- Default color for dialogue text.
         text_line_height_pixels = 6, -- Pixel height of a single line of text.
 
-        sfx_typewriter = 0, -- SFX ID for the character typing sound.
-        sfx_next_line = 2, -- SFX ID when advancing to a new line within the same message.
-        sfx_next_message = 2, -- SFX ID when advancing to a new dialogue message.
+        sfx_typewriter_0 = 0, -- SFX ID for the character 1st typing sound.
+        sfx_typewriter_1 = 1, -- SFX ID for the character 2nd typing sound.
+        sfx_typewriter_2 = 2, -- SFX ID for the character 3rd typing sound.
+        sfx_typewriter_skip = 4, -- how often to play the typewriter sfx.
+        sfx_typewriter_skip_count = 0, -- keep track of how often we're palying the typewrite sfx.
+        sfx_next_line = 0, -- SFX ID when advancing to a new line within the same message.
+        sfx_next_message = 0, -- SFX ID when advancing to a new dialogue message.
         period_typing_delay_frames = 6, -- Extra delay (in frames) after typing a period.
 
         bubble_padding_pixels_x = 4, -- Horizontal padding (each side) inside the bubble before text.
@@ -193,7 +197,7 @@ end
 --   speaker: table - The entity speaking (must have .x, .y, and .name properties).
 --                    If speaker.name == "narrator", it's treated as narration.
 --   callback: (optional) function - A function to call when this dialogue message concludes.
-function dialogue:show(txt, speaker, callback)
+function dialogue:show(txt, speaker, callback, voice)
     local lines = {}
     -- Stores the processed, wrapped lines of text.
     local currline = ""
@@ -270,7 +274,8 @@ function dialogue:show(txt, speaker, callback)
         speaker_entity = speaker,
         on_finish_callback = callback or 0,
         is_narration = is_narration,
-        calculated_width_tiles = calculated_w_tiles -- Store the calculated width.
+        calculated_width_tiles = calculated_w_tiles, -- Store the calculated width.
+        voice = voice or { 0, 0 }
     }
     add(self.pipeline, entry)
     -- Add the entry to the dialogue queue.
@@ -295,7 +300,7 @@ function dialogue:_next_line_in_message()
         -- No more lines or current line is empty, clear the last display slot.
         self.display_lines_cache[#self.display_lines_cache] = ""
     end
-    sfx(self.style.sfx_next_line)
+    --sfx(self.style.sfx_next_line)
     -- Play sound for line advance.
 end
 
@@ -314,7 +319,7 @@ function dialogue:_next_message_in_pipeline()
     end
     self:_reset_display_state()
     -- Prepare for the next message or idle state.
-    sfx(self.style.sfx_next_message)
+    --sfx(self.style.sfx_next_message)
     -- Play sound for message advance.
 end
 
@@ -336,7 +341,7 @@ function dialogue:update()
             local first_char = sub(first_line_text, 1, 1)
             self.display_lines_cache[#self.display_lines_cache] = first_char -- Display first character.
             self.typing_timer = 1
-            if first_char ~= " " then sfx(self.style.sfx_typewriter) end
+            if first_char ~= " " then sfx(rnd({ current_entry.voice[1], current_entry.voice[2] }), 0) end
             if first_char == "." then self.typing_timer = self.style.period_typing_delay_frames end
         elseif current_entry and #current_entry.text_lines > 0 then
             -- First line is empty, but other lines exist; try to advance to the next line.
@@ -383,7 +388,11 @@ function dialogue:update()
                 local next_char = sub(current_source_line_text, next_char_index, next_char_index)
                 self.typing_timer = 1
                 if next_char ~= " " then
-                    sfx(self.style.sfx_typewriter)
+                    self.style.sfx_typewriter_skip_count += 1
+                    if self.style.sfx_typewriter_skip_count >= self.style.sfx_typewriter_skip then
+                        self.style.sfx_typewriter_skip_count = 0
+                        sfx(rnd({ current_entry.voice[1], current_entry.voice[2] }), 0)
+                    end
                 end
                 if next_char == "." then
                     self.typing_timer = self.style.period_typing_delay_frames
