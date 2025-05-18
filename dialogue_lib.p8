@@ -276,7 +276,7 @@ function dialogue:show(txt, speaker, callback, voice)
         on_finish_callback = callback or 0,
         is_narration = is_narration,
         calculated_width_tiles = calculated_w_tiles, -- Store the calculated width.
-        voice = voice or { 0, 0 }
+        voice = voice or { 63, 63 }
     }
     add(self.pipeline, entry)
     -- Add the entry to the dialogue queue.
