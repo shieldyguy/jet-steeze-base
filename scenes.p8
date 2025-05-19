@@ -51,10 +51,11 @@ knife = {
 function chop_setup()
     knife.start_time = t()
     dialogue:show(
-        "when in doubt...       \n...chop!", narrator, function()
+        "when in doubt... chop!", narrator, function()
             knife.done = true
             knife.chop_state = "down"
             knife.chop_time = t()
+            sfx(12)
         end
     )
 end
