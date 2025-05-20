@@ -53,13 +53,13 @@ entities = {
         voice = { 3, 4 },
         event = function(self)
             self.triggered = true
-            dialogue:show("knock, knock", steve, nil, steve.voice)
-            dialogue:show("who's there?", self, nil, self.voice)
-            dialogue:show("bingus...", steve, nil, steve.voice)
-            dialogue:show("bingus who?", self, nil, self.voice)
-            dialogue:show("bingus more beers!", steve, nil, steve.voice)
-            dialogue:show("and a spleef while yer at it!", steve, nil, steve.voice)
-            dialogue:show(
+            d_show("knock, knock", steve, nil, steve.voice)
+            d_show("who's there?", self, nil, self.voice)
+            d_show("bingus...", steve, nil, steve.voice)
+            d_show("bingus who?", self, nil, self.voice)
+            d_show("bingus more beers!", steve, nil, steve.voice)
+            d_show("and a spleef while yer at it!", steve, nil, steve.voice)
+            d_show(
                 "hiyo!", narrator, function()
                     self.triggered = false
                 end, steve.voice
@@ -123,7 +123,7 @@ function _init()
     camera_max_y = 36
 
     -- initialize dialogue system
-    dialogue:init()
+    d_init()
 
     -- Initialize game state
     switch_scene("title")
