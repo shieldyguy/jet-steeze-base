@@ -70,6 +70,11 @@ function chop_update()
     end
 end
 
+function draw_big_sprite(x, y, w, h, sprite)
+    sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
+    sspr(sx, sy, w, h, x, y, w * 2, h * 2)
+end
+
 function chop_draw()
     camera()
     cls(0)
@@ -81,35 +86,28 @@ function chop_draw()
     if (knife.chop_state == "up") then
         -- knife
         if fade(knife.start_time, 4) then
-            sx, sy = (knife.knife_sprite % 16) * 8, (knife.knife_sprite \ 16) * 8
-            sspr(sx, sy, 16, 8, knife.x - 16, knife.y - 20, 32, 16)
+            draw_big_sprite(knife.x - 16, knife.y - 20, 16, 8, knife.knife_sprite)
         end
         -- choppin' block
-        sx, sy = (knife.block_sprite % 16) * 8, (knife.block_sprite \ 16) * 8
-        sspr(sx, sy, 16, 8, knife.x - 16, knife.y, 32, 16)
+        draw_big_sprite(knife.x - 16, knife.y, 16, 8, knife.block_sprite)
 
-        sx, sy = (knife.apple_sprite % 16) * 8, (knife.apple_sprite \ 16) * 8
-        sspr(sx, sy, 8, 8, knife.x - 4, knife.y - 4, 16, 16)
+        draw_big_sprite(knife.x - 4, knife.y - 4, 8, 8, knife.apple_sprite)
     else
         -- Time since chop
         local dt = t() - knife.chop_time
         local spread = min(dt * 10, 20) -- how far pieces spread
         -- choppin' block
-        sx, sy = (knife.block_sprite % 16) * 8, (knife.block_sprite \ 16) * 8
-        sspr(sx, sy, 16, 8, knife.x - 16, knife.y, 32, 16)
+        draw_big_sprite(knife.x - 16, knife.y, 16, 8, knife.block_sprite)
 
         if not fade(knife.chop_time, 4) then
-            sx, sy = ((knife.chopped_apple_sprite + 1) % 16) * 8, ((knife.chopped_apple_sprite + 1) \ 16) * 8
-            sspr(sx, sy, 8, 8, knife.x + spread, knife.y - 2, 16, 16)
+            draw_big_sprite(knife.x + spread, knife.y - 2, 8, 8, knife.chopped_apple_sprite + 1)
         end
 
         -- knife
-        sx, sy = (knife.knife_sprite % 16) * 8, (knife.knife_sprite \ 16) * 8
-        sspr(sx, sy, 16, 8, knife.x - 16, knife.y - 1, 32, 16)
+        draw_big_sprite(knife.x - 16, knife.y - 1, 16, 8, knife.knife_sprite)
 
         if not fade(knife.chop_time, 4) then
-            sx, sy = (knife.chopped_apple_sprite % 16) * 8, (knife.chopped_apple_sprite \ 16) * 8
-            sspr(sx, sy, 8, 8, knife.x - 16 - spread, knife.y, 16, 16)
+            draw_big_sprite(knife.x - 16 - spread, knife.y, 8, 8, knife.chopped_apple_sprite)
         end
     end
 
