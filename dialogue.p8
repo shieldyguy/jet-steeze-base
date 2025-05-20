@@ -3,6 +3,8 @@ version 42
 __lua__
 dialogue = {}
 
+-- started with DTB: https://www.lexaloffle.com/bbs/?tid=28465
+
 local default_advance_button_id = 5
 
 function dialogue:init(custom_advance_button_id)
