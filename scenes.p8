@@ -50,7 +50,7 @@ knife = {
 
 function chop_setup()
     knife.start_time = t()
-    d_show(
+    dialogue:show(
         "when in doubt... chop!", narrator, function()
             knife.done = true
             knife.chop_state = "down"
@@ -62,7 +62,7 @@ end
 
 function chop_update()
     update_camera()
-    d_upd()
+    dialogue:update()
     if knife.done then
         if btnp(4) then
             switch_scene("main")
@@ -121,7 +121,7 @@ function chop_draw()
     end
 
     -- dialogue
-    d_draw()
+    dialogue:draw()
 end
 
 function chop_move()
@@ -139,13 +139,13 @@ end
 -- title scene
 
 function title_setup()
-    --d_show("is this... a dream?", narrator)
-    d_show("press x to start", narrator)
+    --dialogue:show("is this... a dream?", narrator)
+    dialogue:show("press x to start", narrator)
 end
 
 function title_update()
     update_camera()
-    d_upd()
+    dialogue:update()
     if btnp(5) then
         switch_scene("chop")
     end
@@ -154,7 +154,7 @@ end
 function title_draw()
     camera()
     cls(0)
-    d_draw()
+    dialogue:draw()
 end
 
 -- main scene
@@ -172,7 +172,7 @@ function main_update()
     handle_entity_collisions()
     update_entities()
     update_camera()
-    d_upd()
+    dialogue:update()
 end
 
 function main_draw()
@@ -186,7 +186,7 @@ function main_draw()
     draw_particles()
     draw_entities()
     draw_player()
-    d_draw()
+    dialogue:draw()
 end
 
 -- Register states
