@@ -31,7 +31,7 @@ function dialogue:init(custom_advance_button_id)
         arrow_sprite_id = 12,
         arrow_sprite_width_px = 6, -- Width of the arrow sprite/graphic
         flip_threshold_screen_x = 64,
-        no_arrow_gap_above_speaker = 2, -- Gap for no-arrow mode
+        no_arrow_gap_above_speaker = 6, -- Gap for no-arrow mode
 
         character_bubble = {
             min_width_tiles = 2,
