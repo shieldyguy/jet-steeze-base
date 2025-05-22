@@ -4,6 +4,67 @@ __lua__
 -- Global scene table
 scenes = {}
 
+timeline = {
+    { fs = 30, fn = function() cls(3) end },
+    {
+        fs = 30,
+        fn = function()
+            if flash(5) then
+                cls(7)
+            else
+                cls(0)
+            end
+        end,
+        fn_e = function() cls(7) end
+    },
+    { fs = 10, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 194) end },
+    { fs = 15, fn = function() cls(0) end },
+    { fs = 10, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 192) end },
+    { fs = 15, fn = function() cls(0) end },
+    { fs = 2000, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 196) end }
+}
+
+seq = timeline
+seq_t = 0
+seq_idx = 1
+seq_f = 0
+
+function seq_next()
+    seq_t = 0
+    seq_idx += 1
+end
+
+function seq_rst()
+    seq_t = 0
+    seq_idx = 1
+end
+
+function seq_upd()
+    local step = seq[seq_idx]
+    if not step then
+        seq_idx = 1
+        seq_t = 0
+        return
+    end
+
+    seq_t += 1
+    if seq_t == 1 and step.fn_e then
+        step.fn_e()
+    end
+
+    if seq_t > step.fs then
+        seq_idx += 1
+        seq_t = 0
+    end
+end
+
+function seq_drw()
+    local step = seq[seq_idx]
+    if step and step.fn then
+        step.fn()
+    end
+end
+
 -- Register a state
 function add_scene(name, update_fn, draw_fn, setup_fn)
     scenes[name] = {
@@ -20,6 +81,7 @@ end
 function switch_scene(name)
     local scene = scenes[name]
     if scene then
+        seq_rst()
         -- run one-time setup
         scene.setup()
         -- reassign update/draw
@@ -28,6 +90,11 @@ function switch_scene(name)
     else
         printh("unknown state: " .. name)
     end
+end
+
+function draw_big_sprite(x, y, w, h, sprite)
+    sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
+    sspr(sx, sy, w, h, x, y, w * 2, h * 2)
 end
 
 -- chop scene
@@ -68,11 +135,6 @@ function chop_update()
             switch_scene("main")
         end
     end
-end
-
-function draw_big_sprite(x, y, w, h, sprite)
-    sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
-    sspr(sx, sy, w, h, x, y, w * 2, h * 2)
 end
 
 function chop_draw()
@@ -117,7 +179,7 @@ function chop_draw()
     end
 
     if (t() - knife.chop_time > 8) and (knife.chop_state == "down") then
-        switch_scene("main")
+        switch_scene("sushi")
     end
 
     -- dialogue
@@ -136,6 +198,23 @@ function chop_move()
     end
 end
 
+-- sushi
+function sushi_setup()
+    dialogue:show("sushi", narrator)
+end
+
+function sushi_update()
+    update_camera()
+    seq_upd()
+    dialogue:update()
+end
+
+function sushi_draw()
+    camera()
+    seq_drw()
+    dialogue:draw()
+end
+
 -- title scene
 
 function title_setup()
@@ -147,7 +226,7 @@ function title_update()
     update_camera()
     dialogue:update()
     if btnp(5) then
-        switch_scene("chop")
+        switch_scene("main")
     end
 end
 
@@ -193,6 +272,7 @@ end
 add_scene("title", title_update, title_draw, title_setup)
 add_scene("main", main_update, main_draw, main_setup)
 add_scene("chop", chop_update, chop_draw, chop_setup)
+add_scene("sushi", sushi_update, sushi_draw, sushi_setup)
 
 -- helpers
 -- returns true if sprite should be drawn this frame
@@ -210,4 +290,8 @@ function fade(start_time, duration)
     local pulse = flr(eased * 10)
     -- control steps
     return (frame_count % 7) < pulse
+end
+
+function flash(period)
+    return (seq_t % period * 2) < period
 end
