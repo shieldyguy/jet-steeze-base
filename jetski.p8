@@ -53,14 +53,14 @@ entities = {
         voice = { 3, 4 },
         event = function(self)
             self.triggered = true
-            dialogue:show("knock, knock", steve, nil, steve.voice)
-            dialogue:show("who's there?", self, nil, self.voice)
-            dialogue:show("bingus...", steve, nil, steve.voice)
-            dialogue:show("bingus who?", self, nil, self.voice)
-            dialogue:show("bingus more beers!", steve, nil, steve.voice)
-            dialogue:show("and a spleef while yer at it!", steve, nil, steve.voice)
+            dialogue:show("knock, knock", steve, self, nil, steve.voice)
+            dialogue:show("who's there?", self, steve, nil, self.voice)
+            dialogue:show("bingus...", steve, self, nil, steve.voice)
+            dialogue:show("bingus who?", self, steve, nil, self.voice)
+            dialogue:show("bingus more beers!", steve, self, nil, steve.voice)
+            dialogue:show("and a spleef while yer at it!", steve, self, nil, steve.voice)
             dialogue:show(
-                "hiyo!", narrator, function()
+                "hiyo!", narrator, nil, function()
                     self.triggered = false
                 end, steve.voice
             )
@@ -89,7 +89,7 @@ function _init()
         y1 = 0
     }
     frame_count = 0
-
+    scene_frame_count = 0
     sprite_index = 0
 
     -- initialize camera with tracking
@@ -131,6 +131,7 @@ end
 
 function _update()
     frame_count += 1
+    scene_frame_count += 1
     game_update()
 end
 
