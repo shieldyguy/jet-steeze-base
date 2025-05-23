@@ -23,11 +23,12 @@ timeline = {
     { fs = 30, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 196) end },
     { fs = 15, fn = function() cls(0) end },
     {
-        fs = 100, fn = function()
+        fs = 10, fn = function()
             cls()
             slice(32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 8)
         end
-    }
+    },
+    { fs = 200, fn = function() cls(0) rspr((201 % 16) * 8, (201 \ 16) * 8, 64, 32, sin(t() * 0.23) * 0.1, 4) end }
 }
 
 g = 32 + rnd(64)
@@ -49,7 +50,7 @@ sliceline = {
     }
 }
 
-seq = sliceline
+seq = timeline
 seq_t = 0
 seq_idx = 1
 seq_f = 0
@@ -331,4 +332,37 @@ function slice(x0, y0, x1, y1, frames, col)
     local t = min(seq_t / frames, 1)
     local t0 = max((seq_t - 3) / frames, 0)
     line(lerp(x0, x1, t0), lerp(y0, y1, t0), lerp(x0, x1, t), lerp(y0, y1, t), col or 7)
+end
+
+-- sprite rotation by @fsouchu
+
+-- rotate a sprite
+-- sx,sy - sprite sheet coords
+-- x,y - screen coords
+-- a - angle
+-- w - width in tiles
+function rspr(sx, sy, x, y, a, w)
+    local ca, sa = cos(a), sin(a)
+    local srcx, srcy
+    local ddx0, ddy0 = ca, sa
+    local mask = shl(0xfff8, (w - 1))
+    w *= 4
+    ca *= w - 0.5
+    sa *= w - 0.5
+    local dx0, dy0 = sa - ca + w, -ca - sa + w
+    w = 2 * w - 1
+    for ix = 0, w do
+        srcx, srcy = dx0, dy0
+        for iy = 0, w do
+            if band(bor(srcx, srcy), mask) == 0 then
+                local c = sget(sx + srcx, sy + srcy)
+                -- set transparent color here
+                if (c != 0) pset(x + ix, y + iy, c)
+            end
+            srcx -= ddy0
+            srcy += ddx0
+        end
+        dx0 += ddx0
+        dy0 += ddy0
+    end
 end
