@@ -1,6 +1,38 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
+show_slice = false
+scissors_y = 32
+scissors_x = 32
+
+function sushi_package_chop()
+    cls(0)
+    draw_big_sprite(knife.x + 10, knife.y - 20, 16, 16, 194, 2)
+    if btnp(4) then
+        show_slice = true
+        seq_t = 2
+    end
+    if btn(3) then
+        scissors_y += 1
+    end
+    if btn(2) then
+        scissors_y -= 1
+    end
+
+    spr(214, scissors_x, scissors_y)
+    if show_slice == true then
+        scissors_x += 20
+        slice(scissors_x, scissors_y + 4, scissors_x + 64, scissors_y + 4, 15)
+        if scissors_x > 96 and scissors_y > 32 then
+            show_slice = false
+            scissors_y = 32
+            scissors_x = 32
+            dialogue:show("you're a genius!", narrator)
+            seq_next()
+        end
+    end
+end
+
 -- Global scene table
 scenes = {}
 timeline = {
@@ -16,19 +48,18 @@ timeline = {
         end,
         fn_e = function() cls(7) end
     },
-    { fs = 10, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 194) end },
+    { fs = 0, fn = sushi_package_chop, fn_e = function() show_slice = false dialogue:show("open that puppy!", narrator) end },
     { fs = 15, fn = function() cls(0) end },
-    { fs = 10, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 192) end },
+    { fs = 0, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 192) end },
     { fs = 15, fn = function() cls(0) end },
     { fs = 30, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 196) end },
     { fs = 15, fn = function() cls(0) end },
     {
-        fs = 10, fn = function()
+        fs = 100, fn = function()
             cls()
-            slice(32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 8)
+            slice(32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 5)
         end
-    },
-    { fs = 200, fn = function() cls(0) rspr((201 % 16) * 8, (201 \ 16) * 8, 64, 32, sin(t() * 0.23) * 0.1, 4) end }
+    }
 }
 
 g = 32 + rnd(64)
@@ -84,7 +115,9 @@ function seq_drw()
     if seq_t == 1 and step.fn_e then
         step.fn_e()
     end
-    if seq_t > step.fs then
+    if (step.fs == 0) then
+        -- chill
+    elseif seq_t > step.fs then
         seq_idx += 1
         seq_t = 0
     end
@@ -117,9 +150,10 @@ function switch_scene(name)
     end
 end
 
-function draw_big_sprite(x, y, w, h, sprite)
+function draw_big_sprite(x, y, w, h, sprite, scale)
+    scale = scale or 2
     sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
-    sspr(sx, sy, w, h, x, y, w * 2, h * 2)
+    sspr(sx, sy, w, h, x, y, w * scale, h * scale)
 end
 
 -- chop scene
@@ -332,37 +366,4 @@ function slice(x0, y0, x1, y1, frames, col)
     local t = min(seq_t / frames, 1)
     local t0 = max((seq_t - 3) / frames, 0)
     line(lerp(x0, x1, t0), lerp(y0, y1, t0), lerp(x0, x1, t), lerp(y0, y1, t), col or 7)
-end
-
--- sprite rotation by @fsouchu
-
--- rotate a sprite
--- sx,sy - sprite sheet coords
--- x,y - screen coords
--- a - angle
--- w - width in tiles
-function rspr(sx, sy, x, y, a, w)
-    local ca, sa = cos(a), sin(a)
-    local srcx, srcy
-    local ddx0, ddy0 = ca, sa
-    local mask = shl(0xfff8, (w - 1))
-    w *= 4
-    ca *= w - 0.5
-    sa *= w - 0.5
-    local dx0, dy0 = sa - ca + w, -ca - sa + w
-    w = 2 * w - 1
-    for ix = 0, w do
-        srcx, srcy = dx0, dy0
-        for iy = 0, w do
-            if band(bor(srcx, srcy), mask) == 0 then
-                local c = sget(sx + srcx, sy + srcy)
-                -- set transparent color here
-                if (c != 0) pset(x + ix, y + iy, c)
-            end
-            srcx -= ddy0
-            srcy += ddx0
-        end
-        dx0 += ddx0
-        dy0 += ddy0
-    end
 end
