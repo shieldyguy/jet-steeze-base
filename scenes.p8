@@ -3,7 +3,6 @@ version 42
 __lua__
 -- Global scene table
 scenes = {}
-
 timeline = {
     { fs = 30, fn = function() cls(3) end },
     {
@@ -21,10 +20,36 @@ timeline = {
     { fs = 15, fn = function() cls(0) end },
     { fs = 10, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 192) end },
     { fs = 15, fn = function() cls(0) end },
-    { fs = 2000, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 196) end }
+    { fs = 30, fn = function() cls(0) draw_big_sprite(knife.x - 16, knife.y - 20, 16, 16, 196) end },
+    { fs = 15, fn = function() cls(0) end },
+    {
+        fs = 100, fn = function()
+            cls()
+            slice(32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 32 + rnd(64), 8)
+        end
+    }
 }
 
-seq = timeline
+g = 32 + rnd(64)
+h = 32 + rnd(64)
+j = 32 + rnd(64)
+k = 32 + rnd(64)
+
+sliceline = {
+    {
+        fs = 2, fn_e = function() cls() end, fn = function()
+            cls()
+            slice(g, h, j, k, 2)
+        end, fn_e = function()
+            g = 32 + rnd(64)
+            h = 32 + rnd(64)
+            j = 32 + rnd(64)
+            k = 32 + rnd(64)
+        end
+    }
+}
+
+seq = sliceline
 seq_t = 0
 seq_idx = 1
 seq_f = 0
@@ -48,20 +73,19 @@ function seq_upd()
     end
 
     seq_t += 1
-    if seq_t == 1 and step.fn_e then
-        step.fn_e()
-    end
-
-    if seq_t > step.fs then
-        seq_idx += 1
-        seq_t = 0
-    end
 end
 
 function seq_drw()
     local step = seq[seq_idx]
     if step and step.fn then
         step.fn()
+    end
+    if seq_t == 1 and step.fn_e then
+        step.fn_e()
+    end
+    if seq_t > step.fs then
+        seq_idx += 1
+        seq_t = 0
     end
 end
 
@@ -200,7 +224,7 @@ end
 
 -- sushi
 function sushi_setup()
-    dialogue:show("sushi", narrator)
+    --dialogue:show("sushi", narrator)
 end
 
 function sushi_update()
@@ -226,7 +250,7 @@ function title_update()
     update_camera()
     dialogue:update()
     if btnp(5) then
-        switch_scene("main")
+        switch_scene("sushi")
     end
 end
 
@@ -294,4 +318,17 @@ end
 
 function flash(period)
     return (seq_t % period * 2) < period
+end
+
+function lerp(a, b, t)
+    return flr(a + (b - a) * t)
+end
+
+function slice(x0, y0, x1, y1, frames, col)
+    if seq_t > frames then
+        return
+    end
+    local t = min(seq_t / frames, 1)
+    local t0 = max((seq_t - 3) / frames, 0)
+    line(lerp(x0, x1, t0), lerp(y0, y1, t0), lerp(x0, x1, t), lerp(y0, y1, t), col or 7)
 end
