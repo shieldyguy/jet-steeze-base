@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-#include dialogue.p8
+#include beps.p8
 #include scenes.p8
 #include particles.p8
 
@@ -16,7 +16,7 @@ steve = {
     dz = 0, -- vertical velocity
     g = 0.5, -- gravity
     jump_power = 6, -- initial jump velocity
-    spd = 0.08, -- same speed as basics.p8
+    spd = 0.08,
     dir = 0,
     jetski_sfx_id = 8,
     jetski_sfx_playing = false,
@@ -168,7 +168,6 @@ function draw_player_shadow()
 end
 
 function draw_player()
-    -- draw player at height z
     spr(sprite_index, steve.x - 4, steve.y - 4 - steve.z, 2, 2, flip_x)
 end
 
