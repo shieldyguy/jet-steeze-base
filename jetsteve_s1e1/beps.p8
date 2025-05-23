@@ -28,7 +28,7 @@ function dialogue:init(custom_advance_button_id)
         bubble_fill_color = 1,
         bubble_x_offset_char = 15, -- Distance from tail anchor to bubble body edge
         corner_sprite_id = 10,
-        arrow_sprite_id = 12,
+        arrow_sprite_id = 11,
         arrow_sprite_width_px = 6, -- Width of the arrow sprite/graphic
         flip_threshold_screen_x = 64,
         no_arrow_gap_above_speaker = 10, -- Gap for no-arrow mode
