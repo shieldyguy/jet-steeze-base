@@ -110,9 +110,11 @@ function main_setup()
     -- start jetski sound
     sfx(steve.jetski_sfx_id)
     sfx(steve.jetski_sfx_id + 2)
+    --wave_init()
 end
 
 function main_update()
+    --wave_update(steve.x, steve.y, (steve.dx * steve.dy))
     move_player(steve)
     trigger_splashes()
     get_terrain_collision()
@@ -123,10 +125,13 @@ function main_update()
 end
 
 function main_draw()
+    palt(12, false)
     cls(12)
+    palt(12, true)
 
     camera(cam_x, cam_y)
 
+    --wave_draw()
     map(0, 0, 0, 0, 39, 39)
 
     draw_player_shadow()
