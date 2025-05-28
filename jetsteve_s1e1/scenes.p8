@@ -77,8 +77,8 @@ function switch_scene(name)
 end
 
 function draw_big_sprite(x, y, w, h, sprite, scale)
-    scale = scale or 2
-    sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
+    local scale = scale or 2
+    local sx, sy = (sprite % 16) * 8, (sprite \ 16) * 8
     sspr(sx, sy, w, h, x, y, w * scale, h * scale)
 end
 
@@ -132,9 +132,23 @@ function main_draw()
     camera(cam_x, cam_y)
 
     --wave_draw()
+    -- draw the map
+    -- flags:
+    -- 0x
+    -- 0x40 blocking objects
+    rectfill(5 * 8, 1 * 8, 23 * 8, 9 * 8, 15)
     map(0, 0, 0, 0, 39, 39)
 
+    --for i = 0, 39 do
+    --for j = 0, 39 do
+    --spr(110, i * 8, j * 4)
+    --end
+    --end
+    --local sx, sy = (64 % 16) * 8, (64 \ 16) * 8
+    --sspr(sx, sy, 13 * 8, 32, 10, 32)
+
     draw_player_shadow()
+    map(0, 0, 0, 0, 39, 39, 0x40)
     draw_particles()
     draw_entities()
     draw_player()

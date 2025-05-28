@@ -5,6 +5,9 @@ particles = {}
 splash = {}
 
 function trigger_splashes()
+    local speed = (steve.dx * steve.dx + steve.dy * steve.dy) * 0.1
+    local splash_threshold = 0.05
+
     -- determine splash color based on collision
     -- default to white
     local col = 7
@@ -14,11 +17,14 @@ function trigger_splashes()
     elseif terrain.beach.collision then
         --  sand
         col = terrain.beach.particle_color
+        if (steve.z == 0) then
+            if (speed > splash_threshold) then
+                make_splash(steve.x, steve.y + 2, -speed, steve.dy, speed, col)
+            end
+        end
+        return
     end
 
-    local speed = (steve.dx * steve.dx + steve.dy * steve.dy) * 0.1
-
-    local splash_threshold = 0.05
     if (steve.z == 0) then
         if (steve.dir == dir_map.n or steve.dir == dir_map.s) then
             if (speed > splash_threshold) then
