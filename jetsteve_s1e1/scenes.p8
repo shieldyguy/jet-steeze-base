@@ -120,6 +120,7 @@ function main_update()
     get_terrain_collision()
     handle_entity_collisions()
     update_entities()
+    update_inventory()
     update_camera()
     dialogue:update()
 end
@@ -173,7 +174,7 @@ function main_draw()
         draw_interact_icon(selected)
     end
 
-    print(steve.dir, steve.x + 10, steve.y)
+    --print(steve.dir, steve.x + 10, steve.y)
     dialogue:draw()
 end
 

@@ -5,7 +5,7 @@ particles = {}
 splash = {}
 
 function trigger_splashes()
-    local speed = (steve.dx * steve.dx + steve.dy * steve.dy) * 0.1
+    speed = steve.speed
     local splash_threshold = 0.05
 
     -- determine splash color based on collision
