@@ -155,18 +155,25 @@ function main_draw()
     draw_particles()
     draw_player()
 
-    if #steve.inventory > 0 then
-        if btnp(5) then
-            drop(steve.inventory[#steve.inventory])
-        end
-    end
     selected = find_closest_interactable()
     if selected then
         if btnp(5) then
-            pickup(selected)
+            selected:event()
+        end
+    else
+        if #steve.inventory > 0 then
+            if btnp(5) then
+                drop(steve.inventory[#steve.inventory])
+            end
         end
     end
     draw_entities()
+    draw_inventory()
+    if selected then
+        draw_interact_icon(selected)
+    end
+
+    print(steve.dir, steve.x + 10, steve.y)
     dialogue:draw()
 end
 
