@@ -11,10 +11,7 @@ function trigger_splashes()
     -- determine splash color based on collision
     -- default to white
     local col = 7
-    if terrain.forest.collision then
-        -- grass
-        col = terrain.forest.particle_color
-    elseif terrain.beach.collision then
+    if terrain.beach.collision then
         --  sand
         col = terrain.beach.particle_color
         if (steve.z == 0) then

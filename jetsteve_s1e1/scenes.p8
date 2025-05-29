@@ -134,8 +134,11 @@ function main_draw()
     --wave_draw()
     -- draw the map
     -- flags:
-    -- 0x
-    -- 0x40 blocking objects
+    -- 0 interactable zones
+    -- 4 blocking objects
+    -- 6 top layer objects
+
+    -- sand island background
     rectfill(5 * 8, 1 * 8, 23 * 8, 9 * 8, 15)
     map(0, 0, 0, 0, 39, 39)
 
@@ -150,8 +153,20 @@ function main_draw()
     draw_player_shadow()
     map(0, 0, 0, 0, 39, 39, 0x40)
     draw_particles()
-    draw_entities()
     draw_player()
+
+    if #steve.inventory > 0 then
+        if btnp(5) then
+            drop(steve.inventory[#steve.inventory])
+        end
+    end
+    selected = find_closest_interactable()
+    if selected then
+        if btnp(5) then
+            pickup(selected)
+        end
+    end
+    draw_entities()
     dialogue:draw()
 end
 
