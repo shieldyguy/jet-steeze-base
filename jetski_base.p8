@@ -3,7 +3,7 @@ version 42
 __lua__
 #include dialogue.p8
 --#include entities.p8
---#include scenes.p8
+#include scenes.p8
 #include s1e1.p8
 #include particles.p8
 

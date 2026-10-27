@@ -3,8 +3,8 @@ version 42
 __lua__
 #include dialogue.p8
 --#include entities.p8
---#include scenes.p8
-#include s1e1.p8
+#include scenes.p8
+--#include s1e1.p8
 #include particles.p8
 
 debug = true
@@ -126,7 +126,7 @@ function _init()
     dialogue:init()
 
     -- Initialize game state
-    switch_scene("title")
+    switch_scene("chop")
 end
 
 function _update()

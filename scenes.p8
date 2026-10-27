@@ -177,7 +177,7 @@ knife = {
 function chop_setup()
     knife.start_time = t()
     dialogue:show(
-        "when in doubt... chop!", narrator, function()
+        "when in doubt... chop!", narrator, nil, function()
             knife.done = true
             knife.chop_state = "down"
             knife.chop_time = t()

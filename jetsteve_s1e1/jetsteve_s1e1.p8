@@ -159,7 +159,7 @@ crab = {
         if frame_count % 15 == 0 then
             simple_seek(self, steve, rnd(1))
         end
-        if frame_count % 300 == 0 then
+        if frame_count % 600 == 0 then
             if self.triggered then return end
             self.triggered = true
             dialogue:show("...", self, steve, nil, steve.voice)
